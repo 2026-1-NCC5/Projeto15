@@ -1,0 +1,7 @@
+<resources>
+    <string-array name="cargos_array">
+        <item>Operador</item>
+        <item>Coordenação</item>
+        <item>Admin</item>
+    </string-array>
+</resources>
