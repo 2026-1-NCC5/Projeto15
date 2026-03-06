@@ -68,7 +68,7 @@ Para abrir este projeto você necessita das seguintes ferramentas:
 
 ## 📋 Licença/License
 <p>
-<a href="https://creativecommons.org">Projeto Lideranças Empáticas</a> © 2026 by Daniel Kyoshi Moribe, Gabriel Higobassi Paschoal, Lucas Silva Maciel, Thiago Akira Higa Mitami</a> is licensed under 
+<a> Projeto Lideranças Empáticas</a> © 2026 by Daniel Kyoshi Moribe, Gabriel Higobassi Paschoal, Lucas Silva Maciel, Thiago Akira Higa Mitami</a> is licensed under 
   <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>
   <img src="https://mirrors.creativecommons.org/presskit/icons/cc.svg" alt="CC License" style="width: 16px; height: 16px; margin-left: 4px; vertical-align: middle;">
   <img src="https://mirrors.creativecommons.org/presskit/icons/by.svg" alt="BY Attribution"style="width: 16px; height: 16px; margin-left: 4px; vertical-align: middle;">
