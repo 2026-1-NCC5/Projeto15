@@ -12,7 +12,7 @@
 ## Integrantes:  <a href="https://github.com/danmoribe">Daniel Kyoshi Moribe</a>, <a href="https://github.com/paschoalha">Gabriel Higobassi Paschoal</a>, <a href="https://github.com/LucasSilvaMaciel">Lucas Silva Maciel</a>, <a href="https://github.com/ThiagoAkira0">Thiago Akira Higa Mitami</a>
 
 
-## Professores Orientadores: <a href="https://www.linkedin.com/in/marcosminorunakatsugawa/?locale=pt">Prof. Marcos Minoru Nakatsugawa</a>, <a href="https://www.linkedin.com/in/rafael-diogo-rossetti/">Prof Rafael Diogo Rossetti</a>, <a href="https://www.researchgate.net/profile/Rodnil-Lisboa-2">Prof. Rodnil da Silva Moreira Lisboa</a>, <a href="https://www.linkedin.com/in/rodrigo-da-rosa-phd/">Prof. Rodrigo da Rosa</a>, <a href="https://www.linkedin.com/in/victorbarq/">Prof. Victor Bruno Alexander Rosetti de Quiroz</a>
+## Professores Orientadores: <a href="https://www.linkedin.com/in/marcosminorunakatsugawa/?locale=pt">Prof. Marcos Minoru Nakatsugawa</a>, <a href="https://www.linkedin.com/in/rafael-diogo-rossetti/">Prof. Rafael Diogo Rossetti</a>, <a href="https://www.researchgate.net/profile/Rodnil-Lisboa-2">Prof. Rodnil da Silva Moreira Lisboa</a>, <a href="https://www.linkedin.com/in/rodrigo-da-rosa-phd/">Prof. Rodrigo da Rosa</a>, <a href="https://www.linkedin.com/in/victorbarq/">Prof. Victor Bruno Alexander Rosetti de Quiroz</a>
 
 
 ## Descrição
