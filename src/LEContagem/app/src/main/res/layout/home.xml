@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FFFFFF">
+    xmlns:tools="http://schemas.android.com/tools"
+    android:background="#FFFFFF"
+    tools:context=".HomeActivity">
 
     <!-- TOPO LARANJA -->
     <LinearLayout
@@ -20,11 +21,6 @@
         app:layout_constraintEnd_toEndOf="parent">
 
         <!-- VOLTAR -->
-        <ImageView
-            android:id="@+id/btnBack"
-            android:layout_width="28dp"
-            android:layout_height="28dp"
-           />
 
         <!-- TÍTULO -->
         <TextView
@@ -32,11 +28,11 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:gravity="center"
             android:text="Menu Principal"
             android:textColor="#FFFFFF"
             android:textSize="22sp"
-            android:textStyle="bold"
-            android:gravity="center" />
+            android:textStyle="bold" />
 
     </LinearLayout>
 
@@ -155,6 +151,7 @@
                 android:textColor="#000000"
                 android:textStyle="bold" />
         </LinearLayout>
+
 
     </LinearLayout>
 

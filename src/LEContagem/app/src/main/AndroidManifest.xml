@@ -12,16 +12,34 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.LEContagem"
         tools:targetApi="31">
+
+        <activity android:name=".HomeActivity" />
+
+        <activity android:name=".PerfilActivity" />
+
+        <activity android:name=".ExportacaoActivity" />
+
+        <activity android:name=".CadastroActivity" />
+
+        <activity android:name=".ContagemActivity" />
+
+        <activity android:name=".HistoricoActivity" />
+
+        <activity android:name=".EquipeActivity" />
+
+
         <activity
-            android:name=".MainActivity"
+            android:name=".LoginActivity"
             android:exported="true"
             android:theme="@style/Theme.LEContagem">
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
         </activity>
+
     </application>
 
 </manifest>
