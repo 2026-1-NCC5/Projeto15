@@ -55,8 +55,12 @@ cover/
 *.mo
 *.pot
 
-# Django stuff:
+# Logs
 *.log
+logs/
+
+
+# Django stuff:
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
@@ -162,6 +166,10 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+# Arquivos de sistema
+.DS_Store
+Thumbs.db
+
 # pytype static type analyzer
 .pytype/
 
@@ -205,3 +213,39 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Ambiente
+.env
+.env.local
+.env.*.local
+venv/
+env/
+ENV/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Evidências/imagens locais
+/evidencias/
+/uploads/
+/media/
+
+# Banco de dados local
+*.db
+*.sqlite3
