@@ -35,17 +35,17 @@ def get_db():
 # FUNÇÃO DE TESTE ADICIONADA AQUI!
 def testar_conexao():
     """Função para testar se a conexão com o banco está funcionando"""
-    print(f"📁 Arquivo .env usado: {env_path}")
-    print(f"📄 .env existe? {env_path.exists()}")
-    print(f"🔗 DATABASE_URL: {DATABASE_URL}")
+    print(f"Arquivo .env usado: {env_path}")
+    print(f".env existe? {env_path.exists()}")
+    print(f"DATABASE_URL: {DATABASE_URL}")
     
     try:
         # Tenta conectar
         with engine.connect() as conn:
-            print("✅ Conexão com banco de dados bem-sucedida!")
+            print("Conexão com banco de dados bem-sucedida!")
             return True
     except Exception as e:
-        print(f"❌ Erro ao conectar: {e}")
+        print(f"Erro ao conectar: {e}")
         return False
 
 # Se executar este arquivo diretamente, testa a conexão

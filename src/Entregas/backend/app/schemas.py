@@ -32,3 +32,13 @@ class Usuario(UsuarioBase):
     
     class Config:
         from_attributes = True
+
+class UsuarioUpdate(BaseModel):
+    nome: Optional[str] = None
+    email: Optional[EmailStr] = None
+    senha: Optional[str] = None
+    perfil: Optional[PerfilUsuarioEnum] = None
+    ativo: Optional[bool] = None
+    
+    class Config:
+        from_attributes = True
