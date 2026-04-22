@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.google.services)
 }
 
 android {
@@ -51,23 +52,34 @@ dependencies {
     implementation(libs.androidx.navigation.fragment.ktx)
     implementation(libs.androidx.navigation.ui.ktx)
 
-    // Material Components (TextInputLayout, TextInputEditText)
+    // Material Components extra
     implementation("com.google.android.material:material:1.11.0")
 
     // Lifecycle
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.2")
 
-    // CameraX (caso use câmera para ML de alimentos)
+    // CameraX
     implementation("androidx.camera:camera-core:1.3.1")
     implementation("androidx.camera:camera-camera2:1.3.1")
     implementation("androidx.camera:camera-lifecycle:1.3.1")
     implementation("androidx.camera:camera-view:1.3.1")
 
-    // TensorFlow Lite (Machine Learning)
+    // TensorFlow Lite
     implementation("org.tensorflow:tensorflow-lite:2.14.0")
     implementation("org.tensorflow:tensorflow-lite-support:0.4.4")
 
+    // Tests
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+
+    // Firebase BOM
+    implementation(platform("com.google.firebase:firebase-bom:34.12.0"))
+
+    // Firebase Analytics
+    implementation("com.google.firebase:firebase-analytics")
+    // Firebase
+    implementation(platform("com.google.firebase:firebase-bom:34.12.0"))
+    implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.firebase:firebase-firestore")
 }

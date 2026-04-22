@@ -52,7 +52,7 @@ class ExportacaoActivity : AppCompatActivity() {
         }
 
         btnVoltar.setOnClickListener {
-            val intent = Intent(this, HomeActivity::class.java)
+            val intent = Intent(this, HomeAdminActivity::class.java)
             startActivity(intent)
             finish()
         }

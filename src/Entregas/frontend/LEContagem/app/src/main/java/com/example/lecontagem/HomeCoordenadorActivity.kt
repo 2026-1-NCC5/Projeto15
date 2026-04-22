@@ -5,7 +5,7 @@ import android.os.Bundle
 import android.widget.LinearLayout
 import androidx.appcompat.app.AppCompatActivity
 
-class HomeActivity : AppCompatActivity() {
+class HomeCoordenadorActivity : AppCompatActivity() {
 
     private lateinit var cardCamera: LinearLayout
     private lateinit var cardEquipe: LinearLayout
@@ -15,7 +15,7 @@ class HomeActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.home)
+        setContentView(R.layout.homeadmin)
 
         cardCamera = findViewById(R.id.cardCamera)
         cardEquipe = findViewById(R.id.cardEquipe)

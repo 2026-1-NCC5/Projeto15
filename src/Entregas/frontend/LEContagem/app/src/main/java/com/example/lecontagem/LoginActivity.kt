@@ -8,6 +8,8 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.textfield.TextInputEditText
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 class LoginActivity : AppCompatActivity() {
 
@@ -16,6 +18,10 @@ class LoginActivity : AppCompatActivity() {
 
     private lateinit var entrarButton: Button
     private lateinit var cadastrarSeButton: TextView
+
+    // 🔥 Firebase
+    private lateinit var auth: FirebaseAuth
+    private lateinit var db: FirebaseFirestore
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -27,14 +33,9 @@ class LoginActivity : AppCompatActivity() {
         entrarButton = findViewById(R.id.EntrarButton)
         cadastrarSeButton = findViewById(R.id.Cadastrase)
 
-        // RECEBENDO DADOS DO CADASTRO
-        val intentRecebida = intent
-
-        val emailRecebido = intentRecebida.getStringExtra("email")
-        val senhaRecebida = intentRecebida.getStringExtra("senha")
-
-        emailRecebido?.let { inputEmail.setText(it) }
-        senhaRecebida?.let { inputSenha.setText(it) }
+        // 🔥 Inicializando Firebase
+        auth = FirebaseAuth.getInstance()
+        db = FirebaseFirestore.getInstance()
 
         // BOTÃO ENTRAR
         entrarButton.setOnClickListener {
@@ -60,11 +61,65 @@ class LoginActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            Toast.makeText(this, "Login realizado com sucesso!", Toast.LENGTH_SHORT).show()
+            // 🔥 LOGIN REAL COM FIREBASE
+            auth.signInWithEmailAndPassword(email, senha)
+                .addOnCompleteListener { task ->
 
-            val intent = Intent(this, HomeActivity::class.java)
-            startActivity(intent)
-            finish()
+                    if (task.isSuccessful) {
+
+                        val user = auth.currentUser
+                        val uid = user?.uid
+
+                        if (uid != null) {
+
+                            // 🔥 BUSCAR CARGO NO FIRESTORE
+                            db.collection("users").document(uid)
+                                .get()
+                                .addOnSuccessListener { document ->
+
+                                    if (document.exists()) {
+
+                                        val cargo = document.getString("cargo")
+
+                                        Toast.makeText(this, "Login realizado!", Toast.LENGTH_SHORT).show()
+
+                                        // 🔥 REDIRECIONAMENTO POR CARGO
+                                        when (cargo) {
+
+                                            "Operador" -> {
+                                                startActivity(Intent(this, HomeOperadorActivity::class.java))
+                                            }
+
+                                            "Coordenação" -> {
+                                                startActivity(Intent(this, HomeCoordenadorActivity::class.java))
+                                            }
+
+                                            "Admin" -> {
+                                                startActivity(Intent(this, HomeAdminActivity::class.java))
+                                            }
+
+                                            else -> {
+                                                Toast.makeText(this, "Cargo não identificado", Toast.LENGTH_SHORT).show()
+                                            }
+                                        }
+
+                                        finish()
+
+                                    } else {
+                                        Toast.makeText(this, "Usuário não encontrado no banco", Toast.LENGTH_SHORT).show()
+                                    }
+
+                                }
+                                .addOnFailureListener {
+                                    Toast.makeText(this, "Erro ao buscar dados", Toast.LENGTH_SHORT).show()
+                                }
+
+                        }
+
+                    } else {
+                        Toast.makeText(this, "Erro no login: email ou senha inválidos", Toast.LENGTH_SHORT).show()
+                    }
+                }
         }
 
         // BOTÃO CADASTRAR-SE
