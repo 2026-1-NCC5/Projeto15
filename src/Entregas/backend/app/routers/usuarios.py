@@ -108,3 +108,153 @@ async def listar_usuarios(
     """Listar todos os usuários (apenas ADMIN)"""
     usuarios = db.query(models.Usuario).offset(skip).limit(limit).all()
     return usuarios
+
+
+# ================================= TESTE DE ATUALIZAÇÃO PARA IMPLEMENTAÇÃO DE UPDATE E DELETE PARA USUÁRIO ==================================================
+
+@router.put("/usuarios/{usuario_id}", response_model=schemas.Usuario)
+async def atualizar_usuario(
+    usuario_id: int,
+    usuario_data: schemas.UsuarioUpdate,
+    db: Session = Depends(get_db),
+    current_user: models.Usuario = Depends(auth.get_current_active_user)
+):
+    """
+    Atualiza dados de um usuário.
+    
+    Regras de acesso:
+    - ADMIN pode atualizar qualquer usuário
+    - Usuário comum só pode atualizar a si mesmo
+    """
+    # Buscar usuário no banco
+    usuario = db.query(models.Usuario).filter(models.Usuario.id == usuario_id).first()
+    
+    if not usuario:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Usuário não encontrado"
+        )
+    
+    # Verificar permissão
+    if current_user.id != usuario_id and current_user.perfil != models.PerfilUsuario.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Você não tem permissão para atualizar este usuário"
+        )
+    
+    # Atualizar campos permitidos
+    if usuario_data.nome is not None:
+        usuario.nome = usuario_data.nome
+    
+    if usuario_data.email is not None:
+        # Verificar se novo email já não está em uso
+        email_existente = db.query(models.Usuario).filter(
+            models.Usuario.email == usuario_data.email,
+            models.Usuario.id != usuario_id
+        ).first()
+        
+        if email_existente:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email já está em uso por outro usuário"
+            )
+        usuario.email = usuario_data.email
+    
+    if usuario_data.senha is not None:
+        # Atualizar senha (só o próprio usuário ou admin)
+        if current_user.id != usuario_id and current_user.perfil != models.PerfilUsuario.ADMIN:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Você não tem permissão para alterar a senha deste usuário"
+            )
+        usuario.senha_hash = auth.gerar_hash_senha(usuario_data.senha)
+    
+    if usuario_data.perfil is not None:
+        # Apenas ADMIN pode alterar perfil
+        if current_user.perfil != models.PerfilUsuario.ADMIN:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Apenas administradores podem alterar o perfil de usuários"
+            )
+        usuario.perfil = usuario_data.perfil
+    
+    if usuario_data.ativo is not None:
+        # Apenas ADMIN pode ativar/desativar usuários
+        if current_user.perfil != models.PerfilUsuario.ADMIN:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Apenas administradores podem ativar/desativar usuários"
+            )
+        usuario.ativo = usuario_data.ativo
+    
+    # Salvar alterações
+    db.commit()
+    db.refresh(usuario)
+    
+    return usuario
+
+
+@router.delete("/usuarios/{usuario_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def deletar_usuario(
+    usuario_id: int,
+    db: Session = Depends(get_db),
+    admin: models.Usuario = Depends(auth.verificar_admin)
+):
+    """
+    Remove um usuário do sistema (soft delete - apenas desativa)
+    Apenas ADMIN pode deletar usuários.
+    """
+    # Buscar usuário
+    usuario = db.query(models.Usuario).filter(models.Usuario.id == usuario_id).first()
+    
+    if not usuario:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Usuário não encontrado"
+        )
+    
+    # Impedir que admin se delete
+    if usuario_id == admin.id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Você não pode deletar seu próprio usuário"
+        )
+    
+    # SOFT DELETE: apenas desativa o usuário
+    try:
+        usuario.ativo = False
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao desativar usuário: {str(e)}"
+        )
+    
+    return None  # 204 No Content
+
+
+@router.patch("/usuarios/{usuario_id}/status", response_model=schemas.Usuario)
+async def alternar_status_usuario(
+    usuario_id: int,
+    ativo: bool,
+    db: Session = Depends(get_db),
+    admin: models.Usuario = Depends(auth.verificar_admin)
+):
+    """
+    Ativa ou desativa um usuário (apenas ADMIN).
+    Alternativa ao delete completo.
+    """
+    usuario = db.query(models.Usuario).filter(models.Usuario.id == usuario_id).first()
+    
+    if not usuario:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Usuário não encontrado"
+        )
+    
+    usuario.ativo = ativo
+    db.commit()
+    db.refresh(usuario)
+    
+    return usuario
