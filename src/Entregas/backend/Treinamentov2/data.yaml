@@ -1,0 +1,4 @@
+train: /content/drive/MyDrive/PI_deteccao/dataset_final/train/images
+val: /content/drive/MyDrive/PI_deteccao/dataset_final/val/images
+nc: 6
+names: ['arroz', 'feijao', 'macarrao', 'cafe', 'acucar', 'oleo']
