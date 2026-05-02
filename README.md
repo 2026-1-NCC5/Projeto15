@@ -1,5 +1,5 @@
 # Projeto15
-### Grupo DPLT
+### Grupo TGLD AI
 # FECAP - Fundação Escola de Comércio Álvares Penteado
 
 <p align="center">
