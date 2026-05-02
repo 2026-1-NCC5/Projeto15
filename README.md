@@ -1,5 +1,5 @@
 # Projeto15
-### Grupo TGLD AI
+### Grupo TLGD AI
 # FECAP - Fundação Escola de Comércio Álvares Penteado
 
 <p align="center">
