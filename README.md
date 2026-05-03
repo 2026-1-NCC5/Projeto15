@@ -67,7 +67,7 @@ Para abrir este projeto você necessita das seguintes ferramentas:
 #### -Abra o projeto no Android Studio: 
 src/Entregas/frontend/LEContagem
 
-#### -Execute no dispositivo ou emulador
+#### -Execute no dispositivo ou emulador<br>
 
 
 ### 🔧 Dashboard Web (Node.js)
@@ -78,7 +78,7 @@ src/Entregas/dashboard
 npm install
 
 #### -Inicie a aplicação:
-npm start
+npm start<br>
 
 
 ## 📋 Licença/License
@@ -88,7 +88,7 @@ npm start
   <img src="https://mirrors.creativecommons.org/presskit/icons/cc.svg" alt="CC License" style="width: 16px; height: 16px; margin-left: 4px; vertical-align: middle;">
   <img src="https://mirrors.creativecommons.org/presskit/icons/by.svg" alt="BY Attribution"style="width: 16px; height: 16px; margin-left: 4px; vertical-align: middle;">
 </p>
-
+<br>
 
 ## 🎓 Referências
 
