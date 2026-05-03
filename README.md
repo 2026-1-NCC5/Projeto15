@@ -88,7 +88,6 @@ npm start
   <img src="https://mirrors.creativecommons.org/presskit/icons/cc.svg" alt="CC License" style="width: 16px; height: 16px; margin-left: 4px; vertical-align: middle;">
   <img src="https://mirrors.creativecommons.org/presskit/icons/by.svg" alt="BY Attribution"style="width: 16px; height: 16px; margin-left: 4px; vertical-align: middle;">
 </p>
-<br>
 
 ## 🎓 Referências
 
