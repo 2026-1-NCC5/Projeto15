@@ -2,109 +2,153 @@ package com.example.lecontagem
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
 class EquipeActivity : AppCompatActivity() {
 
-    private lateinit var cardEquipe1: LinearLayout
-    private lateinit var cardEquipe2: LinearLayout
-    private lateinit var cardEquipe3: LinearLayout
+    private lateinit var containerExtras: LinearLayout
     private lateinit var containerMembros: LinearLayout
-    private lateinit var btnEntrarEquipe: Button
-    private lateinit var voltarButton: Button
+    private lateinit var btnEntrar: Button
+    private lateinit var btnVoltar: Button
+    private lateinit var txtMembrosTitulo: TextView
 
-    private lateinit var auth: FirebaseAuth
     private lateinit var db: FirebaseFirestore
+    private lateinit var auth: FirebaseAuth
 
-    private var equipeSelecionada: String? = null  // Guarda qual equipe o user clicou
+    private var equipeSelecionada: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.equipe)
 
-        auth = FirebaseAuth.getInstance()
         db = FirebaseFirestore.getInstance()
+        auth = FirebaseAuth.getInstance()
 
-        cardEquipe1 = findViewById(R.id.cardEquipe1)
-        cardEquipe2 = findViewById(R.id.cardEquipe2)
-        cardEquipe3 = findViewById(R.id.cardEquipe3)
-
+        // Inicialização
+        containerExtras = findViewById(R.id.containerEquipesExtras)
         containerMembros = findViewById(R.id.containerMembros)
-        voltarButton = findViewById(R.id.VoltarButton)
+        btnEntrar = findViewById(R.id.btnEntrar)
+        btnVoltar = findViewById(R.id.btnVoltar)
+        txtMembrosTitulo = findViewById(R.id.txtMembros)
 
-        // botão aparece só depois que a pessoa clicar em uma equipe
-        btnEntrarEquipe = Button(this).apply {
-            text = "Entrar nesta equipe"
-            textSize = 16f
-            setTextColor(resources.getColor(android.R.color.white))
-            setBackgroundColor(resources.getColor(android.R.color.holo_green_dark))
-            setPadding(20, 10, 20, 10)
-            visibility = Button.GONE
+        // Equipes Fixas
+        findViewById<LinearLayout>(R.id.cardEquipe1).setOnClickListener { selecionarEquipe("Equipe 1") }
+        findViewById<LinearLayout>(R.id.cardEquipe2).setOnClickListener { selecionarEquipe("Equipe 2") }
+        findViewById<LinearLayout>(R.id.cardEquipe3).setOnClickListener { selecionarEquipe("Equipe 3") }
+
+        btnVoltar.setOnClickListener {
+            finish() // Fecha a tela e volta para a anterior
         }
 
-        val parentLayout = findViewById<LinearLayout>(R.id.containerMainScroll)
-        parentLayout.addView(btnEntrarEquipe)
-
-        cardEquipe1.setOnClickListener { mostrarMembrosDaEquipe("Equipe 1") }
-        cardEquipe2.setOnClickListener { mostrarMembrosDaEquipe("Equipe 2") }
-        cardEquipe3.setOnClickListener { mostrarMembrosDaEquipe("Equipe 3") }
-
-        voltarButton.setOnClickListener {
-            startActivity(Intent(this, HomeAdminActivity::class.java))
-            finish()
+        btnEntrar.setOnClickListener {
+            equipeSelecionada?.let { entrarNaEquipe(it) }
         }
 
-        btnEntrarEquipe.setOnClickListener {
-            equipeSelecionada?.let { equipe ->
-                entrarNaEquipe(equipe)
-            }
-        }
+        carregarEquipesDoAdmin()
     }
 
-    private fun mostrarMembrosDaEquipe(equipe: String) {
-        equipeSelecionada = equipe
-        btnEntrarEquipe.visibility = Button.VISIBLE
+    private fun carregarEquipesDoAdmin() {
+        containerExtras.removeAllViews()
 
+        // Busca na coleção "equipes" que o GerenciarEquipesActivity cria
+        db.collection("equipes").get()
+            .addOnSuccessListener { docs ->
+                for (d in docs) {
+                    val nome = d.getString("nome") ?: continue
+                    adicionarCardDinamico(nome)
+                }
+            }
+            .addOnFailureListener {
+                Toast.makeText(this, "Erro ao carregar equipes extras", Toast.LENGTH_SHORT).show()
+            }
+    }
+
+    private fun adicionarCardDinamico(nome: String) {
+        val card = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(45, 45, 45, 45) // Ajuste de padding aproximado para 16dp
+            background = ContextCompat.getDrawable(context, R.drawable.card_branco)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { setMargins(0, 0, 0, 32) } // Margin bottom 12dp aprox
+            isClickable = true
+            isFocusable = true
+        }
+
+        val txt = TextView(this).apply {
+            text = "📁 $nome"
+            textSize = 20f
+            setTextColor(ContextCompat.getColor(context, android.R.color.black))
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+        }
+
+        card.addView(txt)
+        card.setOnClickListener { selecionarEquipe(nome) }
+        containerExtras.addView(card)
+    }
+
+    private fun selecionarEquipe(nome: String) {
+        equipeSelecionada = nome
+        txtMembrosTitulo.visibility = View.VISIBLE
+        btnEntrar.visibility = View.VISIBLE
+
+        // Feedback visual para o usuário
+        Toast.makeText(this, "Selecionado: $nome", Toast.LENGTH_SHORT).show()
+
+        listarMembros(nome)
+    }
+
+    private fun listarMembros(equipe: String) {
         containerMembros.removeAllViews()
 
-        db.collection("usuarios")
+        db.collection("users")
             .whereEqualTo("equipe", equipe)
             .get()
-            .addOnSuccessListener { result ->
-                if (result.isEmpty) {
-                    val msg = TextView(this)
-                    msg.text = "Nenhum membro nesta equipe"
-                    msg.setTextColor(resources.getColor(android.R.color.white))
-                    msg.textSize = 16f
-                    containerMembros.addView(msg)
+            .addOnSuccessListener { docs ->
+                if (docs.isEmpty) {
+                    val txt = TextView(this)
+                    txt.text = "Equipe vazia no momento"
+                    txt.setTextColor(0xFFFFFFFF.toInt())
+                    containerMembros.addView(txt)
                     return@addOnSuccessListener
                 }
 
-                for (doc in result) {
-                    val nome = doc.getString("nome") ?: "Sem nome"
-
-                    val textView = TextView(this)
-                    textView.text = "• $nome"
-                    textView.textSize = 16f
-                    textView.setTextColor(resources.getColor(android.R.color.white))
-
-                    containerMembros.addView(textView)
+                for (d in docs) {
+                    val nomeMembro = d.getString("nome") ?: "Sem nome"
+                    val txt = TextView(this).apply {
+                        text = "• $nomeMembro"
+                        textSize = 16f
+                        setTextColor(0xFFFFFFFF.toInt())
+                        setPadding(0, 8, 0, 8)
+                    }
+                    containerMembros.addView(txt)
                 }
             }
     }
 
     private fun entrarNaEquipe(equipe: String) {
-        val userId = auth.currentUser?.uid ?: return
+        val user = auth.currentUser
+        if (user == null) {
+            Toast.makeText(this, "Usuário não logado!", Toast.LENGTH_SHORT).show()
+            return
+        }
 
-        db.collection("usuarios")
-            .document(userId)
+        // Salva a alteração no campo "equipe" do usuário logado
+        db.collection("users")
+            .document(user.uid)
             .update("equipe", equipe)
             .addOnSuccessListener {
-                Toast.makeText(this, "Agora você pertence à $equipe", Toast.LENGTH_SHORT).show()
-                mostrarMembrosDaEquipe(equipe)
+                Toast.makeText(this, "Você agora faz parte da $equipe!", Toast.LENGTH_LONG).show()
+                listarMembros(equipe)
+            }
+            .addOnFailureListener { e ->
+                Toast.makeText(this, "Erro ao salvar: ${e.message}", Toast.LENGTH_SHORT).show()
             }
     }
 }

@@ -12,21 +12,20 @@ class PerfilActivity : AppCompatActivity() {
     private lateinit var edtNome: EditText
     private lateinit var edtEmail: EditText
     private lateinit var edtSenha: EditText
-
     private lateinit var spinnerCargo: Spinner
     private lateinit var spinnerEquipe: Spinner
-
     private lateinit var txtNomeAtual: TextView
     private lateinit var txtEmailAtual: TextView
     private lateinit var txtSenhaAtual: TextView
-    private lateinit var txtCargoAtual: TextView
-    private lateinit var txtEquipeAtual: TextView
-
     private lateinit var btnSalvar: Button
     private lateinit var btnVoltarHome: Button
+    private lateinit var btnDeslogar: Button
 
     private lateinit var auth: FirebaseAuth
     private lateinit var db: FirebaseFirestore
+
+    // Variável que armazena o cargo vindo do banco
+    private var cargoDefinido: String = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,103 +37,118 @@ class PerfilActivity : AppCompatActivity() {
         edtNome = findViewById(R.id.edtNome)
         edtEmail = findViewById(R.id.edtEmail)
         edtSenha = findViewById(R.id.edtSenha)
-
         spinnerCargo = findViewById(R.id.spinnerCargo)
         spinnerEquipe = findViewById(R.id.spinnerEquipe)
-
         txtNomeAtual = findViewById(R.id.txtNomeAtual)
         txtEmailAtual = findViewById(R.id.txtEmailAtual)
         txtSenhaAtual = findViewById(R.id.txtSenhaAtual)
-        txtCargoAtual = findViewById(R.id.txtCargoAtual)
-        txtEquipeAtual = findViewById(R.id.txtEquipeAtual)
-
         btnSalvar = findViewById(R.id.btnSalvar)
         btnVoltarHome = findViewById(R.id.btnVoltarHome)
+        btnDeslogar = findViewById(R.id.btnDeslogar)
 
         configurarSpinners()
         carregarDados()
 
         btnSalvar.setOnClickListener { salvarAlteracoes() }
-
-        btnVoltarHome.setOnClickListener {
-            startActivity(Intent(this, HomeAdminActivity::class.java))
-            finish()
-        }
+        btnVoltarHome.setOnClickListener { redirecionarParaHome() }
+        btnDeslogar.setOnClickListener { deslogar() }
     }
 
     private fun configurarSpinners() {
         val cargos = arrayOf("Operador", "Coordenação", "Admin")
         val equipes = arrayOf("Equipe 1", "Equipe 2", "Equipe 3")
-
-        spinnerCargo.adapter =
-            ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, cargos)
-
-        spinnerEquipe.adapter =
-            ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, equipes)
+        spinnerCargo.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, cargos)
+        spinnerEquipe.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, equipes)
     }
 
     private fun carregarDados() {
         val user = auth.currentUser ?: return
-
-        db.collection("users").document(user.uid)   // 🔥 AQUI ESTÁ A CORREÇÃO
-            .get()
-            .addOnSuccessListener { doc ->
-
-                if (!doc.exists()) {
-                    Toast.makeText(this, "Dados não encontrados", Toast.LENGTH_SHORT).show()
-                    return@addOnSuccessListener
-                }
-
+        db.collection("users").document(user.uid).get().addOnSuccessListener { doc ->
+            if (doc.exists()) {
                 val nome = doc.getString("nome") ?: ""
                 val email = doc.getString("email") ?: ""
-                val senha = doc.getString("senha") ?: ""
-                val cargo = doc.getString("cargo") ?: ""
+                cargoDefinido = doc.getString("cargo") ?: ""
                 val equipe = doc.getString("equipe") ?: ""
 
-                // EXIBIR NOS "ATUAL"
-                txtNomeAtual.text = "Nome atual: $nome"
-                txtEmailAtual.text = "Email atual: $email"
-                txtSenhaAtual.text = "Senha atual: ${"*".repeat(senha.length)}"
-                txtCargoAtual.text = "Cargo atual: $cargo"
-                txtEquipeAtual.text = "Equipe atual: $equipe"
+                txtNomeAtual.text = "Nome: $nome"
+                txtEmailAtual.text = "Email: $email"
+                txtSenhaAtual.text = "Senha atual: ********"
 
-                // SETAR SPINNERS
-                (spinnerCargo.adapter as ArrayAdapter<String>).apply {
-                    spinnerCargo.setSelection(getPosition(cargo))
+                (spinnerCargo.adapter as ArrayAdapter<String>).let {
+                    spinnerCargo.setSelection(it.getPosition(cargoDefinido))
                 }
-
-                (spinnerEquipe.adapter as ArrayAdapter<String>).apply {
-                    spinnerEquipe.setSelection(getPosition(equipe))
+                (spinnerEquipe.adapter as ArrayAdapter<String>).let {
+                    spinnerEquipe.setSelection(it.getPosition(equipe))
                 }
             }
-            .addOnFailureListener {
-                Toast.makeText(this, "Erro ao carregar dados", Toast.LENGTH_SHORT).show()
-            }
+        }
     }
 
     private fun salvarAlteracoes() {
         val user = auth.currentUser ?: return
-
         val updates = mutableMapOf<String, Any>()
 
-        if (edtNome.text.isNotEmpty()) updates["nome"] = edtNome.text.toString()
-        if (edtEmail.text.isNotEmpty()) updates["email"] = edtEmail.text.toString()
-        if (edtSenha.text.isNotEmpty()) updates["senha"] = edtSenha.text.toString()
+        val novoNome = edtNome.text.toString()
+        val novoEmail = edtEmail.text.toString()
+        val novaSenha = edtSenha.text.toString()
+        val novoCargo = spinnerCargo.selectedItem.toString()
+        val novaEquipe = spinnerEquipe.selectedItem.toString()
 
-        updates["cargo"] = spinnerCargo.selectedItem.toString()
-        updates["equipe"] = spinnerEquipe.selectedItem.toString()
+        if (novoNome.isNotEmpty()) updates["nome"] = novoNome
+        if (novoEmail.isNotEmpty()) updates["email"] = novoEmail
+        if (novaSenha.isNotEmpty()) updates["senha"] = novaSenha
 
-        db.collection("users").document(user.uid)   // 🔥 AQUI TAMBÉM
-            .update(updates)
-            .addOnSuccessListener {
+        updates["cargo"] = novoCargo
+        updates["equipe"] = novaEquipe
 
-                if (edtEmail.text.isNotEmpty()) user.updateEmail(edtEmail.text.toString())
-                if (edtSenha.text.isNotEmpty()) user.updatePassword(edtSenha.text.toString())
+        db.collection("users").document(user.uid).update(updates).addOnSuccessListener {
 
-                Toast.makeText(this, "Alterações salvas!", Toast.LENGTH_SHORT).show()
+            // SE O CARGO MUDOU, precisamos garantir que ao sair daqui ele vá para a Home certa
+            val cargoAntigo = cargoDefinido
+            cargoDefinido = novoCargo
+
+            // Atualiza Auth se necessário
+            if (novoEmail.isNotEmpty()) user.updateEmail(novoEmail)
+            if (novaSenha.isNotEmpty()) user.updatePassword(novaSenha)
+
+            Toast.makeText(this, "Perfil atualizado!", Toast.LENGTH_SHORT).show()
+
+            // Se o cargo mudou, avisamos o usuário que ele será redirecionado para a nova Home
+            if (cargoAntigo != novoCargo) {
+                Toast.makeText(this, "Cargo alterado! Redirecionando...", Toast.LENGTH_LONG).show()
+                redirecionarParaHome()
+            } else {
+                carregarDados()
+                edtSenha.text.clear()
             }
-            .addOnFailureListener {
-                Toast.makeText(this, "Erro ao salvar", Toast.LENGTH_SHORT).show()
-            }
+
+        }.addOnFailureListener {
+            Toast.makeText(this, "Erro ao salvar", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun deslogar() {
+        auth.signOut()
+        val intent = Intent(this, LoginActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        startActivity(intent)
+        finish()
+    }
+
+    private fun redirecionarParaHome() {
+        val intent = when (cargoDefinido) {
+            "Admin" -> Intent(this, HomeAdminActivity::class.java)
+            "Operador" -> Intent(this, HomeOperadorActivity::class.java)
+            "Coordenação" -> Intent(this, HomeCoordenadorActivity::class.java)
+            else -> Intent(this, LoginActivity::class.java)
+        }
+
+        // ESSA LINHA É A CHAVE:
+        // Ela limpa todas as telas anteriores. Se ele era Operador e virou Admin,
+        // a tela de HomeOperador é destruída e ele entra na HomeAdmin do zero.
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+
+        startActivity(intent)
+        finish()
     }
 }

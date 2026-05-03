@@ -1,8 +1,6 @@
 package com.example.lecontagem
 
-import android.content.Intent
 import android.os.Bundle
-import android.util.Patterns
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.textfield.TextInputEditText
@@ -11,128 +9,35 @@ import com.google.firebase.firestore.FirebaseFirestore
 
 class CadastroActivity : AppCompatActivity() {
 
-    private lateinit var inputNome: TextInputEditText
-    private lateinit var inputEmail: TextInputEditText
-    private lateinit var inputSenha: TextInputEditText
-
-    private lateinit var spinnerCargo: Spinner
-    private lateinit var cadastrarButton: Button
-    private lateinit var voltarLogin: TextView
-
-    private lateinit var auth: FirebaseAuth
-    private lateinit var firestore: FirebaseFirestore
+    private val auth = FirebaseAuth.getInstance()
+    private val firestore = FirebaseFirestore.getInstance()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.cadastro)
 
-        // Firebase
-        auth = FirebaseAuth.getInstance()
-        firestore = FirebaseFirestore.getInstance()
+        val btnCadastrar = findViewById<Button>(R.id.CadastrarButton)
+        val spinnerCargo = findViewById<Spinner>(R.id.spinnerCargo)
 
-        // Inputs
-        inputNome = findViewById(R.id.InputNome)
-        inputEmail = findViewById(R.id.InputEmail)
-        inputSenha = findViewById(R.id.InputSenha)
+        val cargos = arrayOf("Selecione o cargo", "Operador", "Coordenação", "Admin")
+        spinnerCargo.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, cargos)
 
-        spinnerCargo = findViewById(R.id.spinnerCargo)
-        cadastrarButton = findViewById(R.id.CadastrarButton)
-        voltarLogin = findViewById(R.id.VoltarLogin)
+        btnCadastrar.setOnClickListener {
+            val email = findViewById<TextInputEditText>(R.id.InputEmail).text.toString()
+            val senha = findViewById<TextInputEditText>(R.id.InputSenha).text.toString()
+            val nome = findViewById<TextInputEditText>(R.id.InputNome).text.toString()
+            val cargo = spinnerCargo.selectedItem.toString()
 
-        // cargos
-        val cargos = arrayOf(
-            "Selecione o cargo",
-            "Operador",
-            "Coordenação",
-            "Admin"
-        )
-
-        val adapter = ArrayAdapter(
-            this,
-            android.R.layout.simple_spinner_dropdown_item,
-            cargos
-        )
-        spinnerCargo.adapter = adapter
-
-        cadastrarButton.setOnClickListener {
-            realizarCadastro()
-        }
-
-        voltarLogin.setOnClickListener {
-            startActivity(Intent(this, LoginActivity::class.java))
-            finish()
-        }
-    }
-
-    private fun realizarCadastro() {
-
-        val nome = inputNome.text.toString().trim()
-        val email = inputEmail.text.toString().trim()
-        val senha = inputSenha.text.toString().trim()
-        val cargo = spinnerCargo.selectedItem.toString()
-
-        // validações
-        if (nome.isEmpty()) {
-            inputNome.error = "Digite seu nome"
-            inputNome.requestFocus()
-            return
-        }
-
-        if (email.isEmpty()) {
-            inputEmail.error = "Digite seu email"
-            inputEmail.requestFocus()
-            return
-        }
-
-        if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-            inputEmail.error = "Email inválido"
-            inputEmail.requestFocus()
-            return
-        }
-
-        if (senha.isEmpty()) {
-            inputSenha.error = "Digite sua senha"
-            inputSenha.requestFocus()
-            return
-        }
-
-        if (cargo == "Selecione o cargo") {
-            Toast.makeText(this, "Selecione um cargo", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        // 🔥 Firebase Auth: criar usuário
-        auth.createUserWithEmailAndPassword(email, senha)
-            .addOnSuccessListener { result ->
-
-                val uid = result.user?.uid ?: return@addOnSuccessListener
-
-                // 🔥 Dados para salvar no Firestore
-                val dadosUsuario = hashMapOf(
-                    "uid" to uid,
-                    "nome" to nome,
-                    "email" to email,
-                    "cargo" to cargo
-                )
-
-                // 🔥 Firebase Firestore: salvar documento users/{uid}
-                firestore.collection("users")
-                    .document(uid)
-                    .set(dadosUsuario)
-                    .addOnSuccessListener {
-                        Toast.makeText(this, "Cadastro realizado!", Toast.LENGTH_SHORT).show()
-
-                        // vai pro login
-                        startActivity(Intent(this, LoginActivity::class.java))
+            if (email.isNotEmpty() && cargo != "Selecione o cargo") {
+                auth.createUserWithEmailAndPassword(email, senha).addOnSuccessListener {
+                    val uid = it.user?.uid ?: ""
+                    val map = hashMapOf("uid" to uid, "nome" to nome, "cargo" to cargo, "email" to email)
+                    firestore.collection("users").document(uid).set(map).addOnSuccessListener {
+                        Toast.makeText(this, "Sucesso!", Toast.LENGTH_SHORT).show()
                         finish()
                     }
-                    .addOnFailureListener { e ->
-                        Toast.makeText(this, "Erro ao salvar dados: ${e.message}", Toast.LENGTH_LONG).show()
-                    }
-
+                }
             }
-            .addOnFailureListener { e ->
-                Toast.makeText(this, "Erro no cadastro: ${e.message}", Toast.LENGTH_LONG).show()
-            }
+        }
     }
 }

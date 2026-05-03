@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="20dp"
+    android:background="#FFFFFF">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- TÍTULO -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Gerenciar Equipes"
+            android:textSize="26sp"
+            android:textStyle="bold"
+            android:textColor="#000"
+            android:layout_marginBottom="20dp"/>
+
+        <!-- EQUIPES FIXAS -->
+        <TextView
+            android:text="Equipes Fixas (não removíveis)"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="10dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+        <LinearLayout
+            android:id="@+id/cardEquipe1"
+            android:background="@drawable/card_equipes"
+            android:padding="16dp"
+            android:orientation="vertical"
+            android:layout_marginBottom="12dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+            <TextView android:text="👥 Equipe 1"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/cardEquipe2"
+            android:background="@drawable/card_equipes"
+            android:padding="16dp"
+            android:orientation="vertical"
+            android:layout_marginBottom="12dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+            <TextView android:text="🛠 Equipe 2"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/cardEquipe3"
+            android:background="@drawable/card_equipes"
+            android:padding="16dp"
+            android:orientation="vertical"
+            android:layout_marginBottom="20dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+            <TextView android:text="⭐ Equipe 3"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+        </LinearLayout>
+
+        <!-- NOVAS EQUIPES -->
+        <TextView
+            android:text="Equipes Criadas pelo Admin"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="10dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+        <LinearLayout
+            android:id="@+id/containerEquipesCriadas"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"/>
+
+        <!-- INPUT CRIAR -->
+        <EditText
+            android:id="@+id/edtNomeEquipe"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:hint="Nome da nova equipe"
+            android:background="@drawable/card_equipes"
+            android:padding="12dp"
+            android:layout_marginTop="20dp"/>
+
+        <Button
+            android:id="@+id/btnCriar"
+            android:text="Criar Equipe"
+            android:backgroundTint="#4CAF50"
+            android:textColor="#FFF"
+            android:layout_width="match_parent"
+            android:layout_height="55dp"
+            android:layout_marginTop="12dp"/>
+
+        <Button
+            android:id="@+id/btnVoltar"
+            android:text="Voltar"
+            android:backgroundTint="#4CAF50"
+            android:textColor="#FFF"
+            android:layout_width="match_parent"
+            android:layout_height="55dp"
+            android:layout_marginTop="20dp"/>
+
+    </LinearLayout>
+</ScrollView>

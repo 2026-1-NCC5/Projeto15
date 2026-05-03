@@ -2,26 +2,31 @@ package com.example.lecontagem
 
 import android.content.Intent
 import android.os.Bundle
-import android.widget.LinearLayout
 import androidx.appcompat.app.AppCompatActivity
+import androidx.cardview.widget.CardView
 
 class HomeCoordenadorActivity : AppCompatActivity() {
 
-    private lateinit var cardCamera: LinearLayout
-    private lateinit var cardEquipe: LinearLayout
-    private lateinit var cardHistorico: LinearLayout
-    private lateinit var cardExportar: LinearLayout
-    private lateinit var cardPerfil: LinearLayout
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.homeadmin)
+        setContentView(R.layout.homecoordenador)
 
-        cardCamera = findViewById(R.id.cardCamera)
-        cardEquipe = findViewById(R.id.cardEquipe)
-        cardHistorico = findViewById(R.id.cardHistorico)
-        cardExportar = findViewById(R.id.cardExportar)
-        cardPerfil = findViewById(R.id.cardPerfil)
+        // Referências
+        val cardDashboard = findViewById<CardView>(R.id.cardDashboardEquipe)
+        val cardExportar = findViewById<CardView>(R.id.cardExportarCoordenador)
+        val cardCamera = findViewById<CardView>(R.id.cardCameraCoordenador)
+        val cardEquipe = findViewById<CardView>(R.id.cardMinhaEquipeCoordenador)
+        val cardPerfil = findViewById<CardView>(R.id.cardPerfilCoordenador)
+        val cardMetas = findViewById<CardView>(R.id.cardVerMetasCoordenador)
+
+        // Cliques
+        cardDashboard.setOnClickListener {
+            startActivity(Intent(this, DashboardCoordenadorActivity::class.java))
+        }
+
+        cardExportar.setOnClickListener {
+            startActivity(Intent(this, ExportacaoCoordenadorActivity::class.java))
+        }
 
         cardCamera.setOnClickListener {
             startActivity(Intent(this, ContagemActivity::class.java))
@@ -31,16 +36,13 @@ class HomeCoordenadorActivity : AppCompatActivity() {
             startActivity(Intent(this, EquipeActivity::class.java))
         }
 
-        cardHistorico.setOnClickListener {
-            startActivity(Intent(this, HistoricoActivity::class.java))
-        }
-
-        cardExportar.setOnClickListener {
-            startActivity(Intent(this, ExportacaoActivity::class.java))
-        }
-
         cardPerfil.setOnClickListener {
+            // Direciona para a tela de perfil já existente
             startActivity(Intent(this, PerfilActivity::class.java))
+        }
+
+        cardMetas.setOnClickListener {
+            startActivity(Intent(this, VisualizarMetasActivity::class.java))
         }
     }
 }

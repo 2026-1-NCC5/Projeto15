@@ -2,6 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -13,36 +16,43 @@
         android:theme="@style/Theme.LEContagem"
         tools:targetApi="31">
 
+        <!-- Activities do Sistema -->
         <activity android:name=".HomeAdminActivity" />
-
         <activity android:name=".PerfilActivity" />
-
         <activity android:name=".ExportacaoActivity" />
-
         <activity android:name=".CadastroActivity" />
-
         <activity android:name=".ContagemActivity" />
-
         <activity android:name=".HistoricoActivity" />
-
         <activity android:name=".EquipeActivity" />
-
         <activity android:name=".HomeOperadorActivity" />
-
         <activity android:name=".HomeCoordenadorActivity" />
+        <activity android:name=".GerenciarMetasActivity" />
+        <activity android:name=".GerenciarUsuariosActivity"/>
+        <activity android:name=".GerenciarEquipesActivity"/>
+        <activity android:name=".VisualizarMetasActivity"/>
+        <activity android:name=".ExportacaoCoordenadorActivity"/>
+        <activity android:name=".DashboardCoordenadorActivity"/>
 
-
+        <!-- Tela de Login (Launcher) -->
         <activity
             android:name=".LoginActivity"
-            android:exported="true"
-            android:theme="@style/Theme.LEContagem">
-
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-
         </activity>
+
+        <!-- Provider AGORA DENTRO DE APPLICATION -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
 
     </application>
 

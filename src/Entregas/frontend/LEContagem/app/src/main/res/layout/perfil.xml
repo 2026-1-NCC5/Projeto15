@@ -6,7 +6,6 @@
     android:layout_height="match_parent"
     android:background="@drawable/fundo_login">
 
-    <!-- FUNDO ESCURO -->
     <View
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -29,167 +28,34 @@
             android:padding="26dp"
             android:elevation="7dp">
 
-            <!-- TÍTULO -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Perfil"
+                android:text="Configurações de Perfil"
                 android:textColor="#4CAF50"
-                android:textSize="26sp"
+                android:textSize="24sp"
                 android:textStyle="bold"
                 android:layout_marginBottom="20dp"/>
 
-            <!-- =====================
-                 NOME
-            ====================== -->
-            <TextView
-                android:id="@+id/txtNomeAtual"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Nome atual: "
-                android:textColor="#4CAF50"
-                android:layout_marginBottom="4dp"/>
+            <TextView android:id="@+id/txtNomeAtual" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#4CAF50" android:text="Nome: "/>
+            <EditText android:id="@+id/edtNome" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="Mudar nome" android:background="@drawable/edittext_background" android:padding="12dp" android:layout_marginBottom="12dp"/>
 
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Nome"
-                android:textStyle="bold"/>
+            <TextView android:id="@+id/txtEmailAtual" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#4CAF50" android:text="Email: "/>
+            <EditText android:id="@+id/edtEmail" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="Mudar email" android:background="@drawable/edittext_background" android:padding="12dp" android:layout_marginBottom="12dp"/>
 
-            <EditText
-                android:id="@+id/edtNome"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:minHeight="56dp"
-                android:padding="16dp"
-                android:hint="Digite outro nome"
-                android:background="@drawable/edittext_background"
-                android:layout_marginBottom="16dp"/>
+            <TextView android:id="@+id/txtSenhaAtual" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#4CAF50" android:text="Senha atual: ********"/>
+            <EditText android:id="@+id/edtSenha" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="Nova senha" android:inputType="textPassword" android:background="@drawable/edittext_background" android:padding="12dp" android:layout_marginBottom="12dp"/>
 
-            <!-- =====================
-                 EMAIL
-            ====================== -->
-            <TextView
-                android:id="@+id/txtEmailAtual"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Email atual:"
-                android:textColor="#4CAF50"
-                android:layout_marginBottom="4dp"/>
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Cargo" android:textStyle="bold"/>
+            <Spinner android:id="@+id/spinnerCargo" android:layout_width="match_parent" android:layout_height="48dp" android:layout_marginBottom="12dp"/>
 
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Email"
-                android:textStyle="bold"/>
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Equipe" android:textStyle="bold"/>
+            <Spinner android:id="@+id/spinnerEquipe" android:layout_width="match_parent" android:layout_height="48dp" android:layout_marginBottom="20dp"/>
 
-            <EditText
-                android:id="@+id/edtEmail"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:minHeight="56dp"
-                android:padding="16dp"
-                android:hint="Digite outro email"
-                android:inputType="textEmailAddress"
-                android:background="@drawable/edittext_background"
-                android:layout_marginBottom="16dp"/>
-
-            <!-- =====================
-                 SENHA
-            ====================== -->
-            <TextView
-                android:id="@+id/txtSenhaAtual"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Senha atual:"
-                android:textColor="#4CAF50"
-                android:layout_marginBottom="4dp"/>
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Senha"
-                android:textStyle="bold"/>
-
-            <EditText
-                android:id="@+id/edtSenha"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:minHeight="56dp"
-                android:padding="16dp"
-                android:hint="Digite nova senha"
-                android:inputType="textPassword"
-                android:background="@drawable/edittext_background"
-                android:layout_marginBottom="16dp"/>
-
-            <!-- =====================
-                 CARGO (SPINNER)
-            ====================== -->
-            <TextView
-                android:id="@+id/txtCargoAtual"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Cargo atual:"
-                android:textColor="#4CAF50"
-                android:layout_marginBottom="4dp"/>
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Cargo"
-                android:textStyle="bold"/>
-
-            <Spinner
-                android:id="@+id/spinnerCargo"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginBottom="16dp"/>
-
-            <!-- =====================
-                 EQUIPE (SPINNER)
-            ====================== -->
-            <TextView
-                android:id="@+id/txtEquipeAtual"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Equipe atual:"
-                android:textColor="#4CAF50"
-                android:layout_marginBottom="4dp"/>
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Equipe"
-                android:textStyle="bold"/>
-
-            <Spinner
-                android:id="@+id/spinnerEquipe"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginBottom="24dp"/>
-
-            <!-- BOTÃO SALVAR -->
-            <Button
-                android:id="@+id/btnSalvar"
-                android:layout_width="match_parent"
-                android:layout_height="60dp"
-                android:text="Salvar Alterações"
-                android:textColor="#FFFFFF"
-                android:textSize="18sp"
-                android:backgroundTint="#4CAF50"
-                android:layout_marginBottom="12dp"/>
-
-            <!-- VOLTAR -->
-            <Button
-                android:id="@+id/btnVoltarHome"
-                android:layout_width="match_parent"
-                android:layout_height="60dp"
-                android:text="Voltar"
-                android:textColor="#FFFFFF"
-                android:textSize="18sp"
-                android:backgroundTint="#4CAF50"/>
+            <Button android:id="@+id/btnSalvar" android:layout_width="match_parent" android:layout_height="55dp" android:text="Salvar Alterações" android:backgroundTint="#4CAF50" android:layout_marginBottom="8dp"/>
+            <Button android:id="@+id/btnVoltarHome" android:layout_width="match_parent" android:layout_height="55dp" android:text="Voltar" android:backgroundTint="#8BC34A" android:layout_marginBottom="8dp"/>
+            <Button android:id="@+id/btnDeslogar" android:layout_width="match_parent" android:layout_height="55dp" android:text="Sair da Conta" android:backgroundTint="#D32F2F" />
 
         </LinearLayout>
     </ScrollView>
-
 </androidx.constraintlayout.widget.ConstraintLayout>
