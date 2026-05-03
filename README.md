@@ -36,6 +36,7 @@ Projeto desenvolvido para auxiliar a organização Lideranças Empáticas em sua
     &emsp;&emsp;|-->Projeto Interdisciplinar: Inteligência Artificial<br>
     &emsp;&emsp;|-->Psicologia, Liderança e Soft Skills<br>
     &emsp;&emsp;|-->Sistemas Operacionais e Computação em Nuvem<br>
+  &emsp;|-->Banner_FECAP_2026_1 - TLGD AI.pdf
   &emsp;|-->Documento - Projeto de Extensão - COM Empresa.docx<br>
   &emsp;|-->Documento - Projeto de Extensão - COM Empresa.pdf<br>
 |-->imagens<br>
