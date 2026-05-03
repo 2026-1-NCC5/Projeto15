@@ -69,6 +69,7 @@ src/Entregas/frontend/LEContagem
 
 #### -Execute no dispositivo ou emulador
 
+
 ### 🔧 Dashboard Web (Node.js)
 #### -Acesse a pasta do dashboard:
 src/Entregas/dashboard
@@ -79,6 +80,7 @@ npm install
 #### -Inicie a aplicação:
 npm start
 
+
 ## 📋 Licença/License
 <p>
 <a> Projeto Lideranças Empáticas</a> © 2026 by Daniel Kyoshi Moribe, Gabriel Higobassi Paschoal, Lucas Silva Maciel, Thiago Akira Higa Mitami</a> is licensed under 
@@ -86,6 +88,7 @@ npm start
   <img src="https://mirrors.creativecommons.org/presskit/icons/cc.svg" alt="CC License" style="width: 16px; height: 16px; margin-left: 4px; vertical-align: middle;">
   <img src="https://mirrors.creativecommons.org/presskit/icons/by.svg" alt="BY Attribution"style="width: 16px; height: 16px; margin-left: 4px; vertical-align: middle;">
 </p>
+
 
 ## 🎓 Referências
 
