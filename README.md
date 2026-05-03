@@ -67,8 +67,8 @@ Para abrir este projeto você necessita das seguintes ferramentas:
 #### -Abra o projeto no Android Studio: 
 src/Entregas/frontend/LEContagem
 
-#### -Execute no dispositivo ou emulador<br>
-
+#### -Execute no dispositivo ou emulador
+<br>
 
 ### 🔧 Dashboard Web (Node.js)
 #### -Acesse a pasta do dashboard:
@@ -78,8 +78,8 @@ src/Entregas/dashboard
 npm install
 
 #### -Inicie a aplicação:
-npm start<br>
-
+npm start
+<br>
 
 ## 📋 Licença/License
 <p>
