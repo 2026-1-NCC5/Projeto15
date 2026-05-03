@@ -58,14 +58,26 @@ Projeto desenvolvido para auxiliar a organização Lideranças Empáticas em sua
 Para abrir este projeto você necessita das seguintes ferramentas:
 
 -<a href="https://code.visualstudio.com/">Visual Studio Code</a><br>
+-<a href="https://developer.android.com/studio?hl=pt-br">Android Studio</a><br>
+-<a href="https://www.python.org/downloads/">Python 3.10+</a><br>
 
 ## 🚀 Como executar o projeto
 
-### 🔧 1. Backend 
+### 🔧 Aplicativo Mobile (Kotlin)
+#### -Abra o projeto no Android Studio: 
+src/Entregas/frontend/LEContagem
 
+#### -Execute no dispositivo ou emulador
 
-### 🔧 2. Frontend 
+### 🔧 Dashboard Web (Node.js)
+#### -Acesse a pasta do dashboard:
+src/Entregas/dashboard
 
+#### -Instale as dependências:
+npm install
+
+#### -Inicie a aplicação:
+npm start
 
 ## 📋 Licença/License
 <p>
@@ -78,6 +90,11 @@ Para abrir este projeto você necessita das seguintes ferramentas:
 ## 🎓 Referências
 
 <ul>
+  <li><a href= "https://nodejs.org/docs/latest/api/">Node.js</a></li>
+  <li><a href= "https://developer.android.com/kotlin?hl=pt-br">Kotlin</a></li>
+  <li><a href="https://docs.python.org/pt-br/3/">Python</a></li>
+  <li><a href= "https://firebase.google.com/docs?hl=pt-br">Firebase</a></li>
+  <li><a href="https://developer.android.com/studio/intro?hl=pt-br">Android Studio</a></li>
 </ul>
 
 
