@@ -1,11 +1,11 @@
 import cv2
+import numpy as np
 from ultralytics import YOLO 
 from collections import Counter
 import time
 
-modelo = YOLO('bestv2.pt')
-
-# Tabela oficial para a Entrega 2 (6 Itens)
+# --- CONFIGURAÇÕES ---
+MODELO_PATH = 'bestv2.pt'
 TABELA_PRODUTOS = {
     "arroz": {"peso": 1.0, "valor": 5.50},
     "feijao": {"peso": 1.0, "valor": 8.50},
@@ -15,99 +15,98 @@ TABELA_PRODUTOS = {
     "oleo": {"peso": 0.9, "valor": 7.50}
 }
 
+# Paleta de Cores Profissional
+C_BG = (20, 20, 20)      # Fundo Escuro
+C_ACCENT = (0, 165, 255) # Laranja Logística
+C_TEXT = (240, 240, 240) # Branco Suave
+C_SUCCESS = (0, 210, 0)  # Verde Confirmado
+
+def desenhar_footer(frame, contagem_atual, historico, peso, valor, progresso, pronto):
+    h, w, _ = frame.shape
+    h_footer = 120  # Altura da barra inferior
+    
+    # 1. Base do Footer (Retângulo no Rodapé)
+    # Criamos um frame preto para o rodapé e colamos no original
+    footer_bg = np.zeros((h_footer, w, 3), dtype=np.uint8)
+    cv2.rectangle(footer_bg, (0, 0), (w, h_footer), C_BG, -1)
+    
+    # 2. Barra de Progresso (Linha fina no topo do footer)
+    if progresso > 0:
+        w_prog = int(w * (progresso / 100))
+        cor_b = C_SUCCESS if pronto else C_ACCENT
+        cv2.rectangle(footer_bg, (0, 0), (w_prog, 4), cor_b, -1)
+
+    # 3. Coluna 1: Status da Rampa (Esquerda)
+    cv2.putText(footer_bg, "RAMPA ATUAL", (20, 30), 0, 0.4, C_ACCENT, 1, cv2.LINE_AA)
+    y_r = 55
+    if not contagem_atual:
+        cv2.putText(footer_bg, "Vazio", (20, y_r), 0, 0.5, (100, 100, 100), 1, cv2.LINE_AA)
+    else:
+        txt_rampa = ", ".join([f"{q}x {i.upper()}" for i, q in contagem_atual.items()])
+        cv2.putText(footer_bg, txt_rampa[:50], (20, y_r), 0, 0.5, C_TEXT, 1, cv2.LINE_AA)
+
+    # 4. Coluna 2: Acumulado (Meio)
+    cv2.putText(footer_bg, "INVENTARIO TOTAL", (w // 3, 30), 0, 0.4, C_ACCENT, 1, cv2.LINE_AA)
+    txt_hist = " | ".join([f"{i[0:3].upper()}: {q}" for i, q in historico.items()])
+    cv2.putText(footer_bg, txt_hist if txt_hist else "---", (w // 3, 55), 0, 0.45, (180, 180, 180), 1, cv2.LINE_AA)
+
+    # 5. Coluna 3: Métricas Financeiras (Direita)
+    cv2.putText(footer_bg, "METRICAS DE CARGA", (2 * w // 3, 30), 0, 0.4, C_ACCENT, 1, cv2.LINE_AA)
+    cv2.putText(footer_bg, f"PESO: {peso:.2f} KG", (2 * w // 3, 60), 0, 0.6, C_TEXT, 2, cv2.LINE_AA)
+    cv2.putText(footer_bg, f"VALOR: R$ {valor:.2f}", (2 * w // 3, 95), 0, 0.6, C_SUCCESS, 2, cv2.LINE_AA)
+
+    # 6. Botão de Ação (Aparece sobre o vídeo quando pronto)
+    if pronto:
+        cv2.rectangle(frame, (w - 180, h - h_footer - 60), (w - 20, h - h_footer - 20), C_SUCCESS, -1)
+        cv2.putText(frame, "SALVAR [S]", (w - 155, h - h_footer - 33), 0, 0.6, (0, 0, 0), 2, cv2.LINE_AA)
+
+    # Une o vídeo com o rodapé
+    return np.vstack((frame, footer_bg))
+
+# --- LOOP PRINCIPAL ---
+modelo = YOLO(MODELO_PATH)
 camera = cv2.VideoCapture(0)
-inicio_contagem = None
 historico_total = Counter() 
-peso_acumulado = 0.0
-valor_acumulado = 0.0
+inicio_timer = None
+peso_total, valor_total = 0.0, 0.0
 
 while True:
     sucesso, frame = camera.read()
     if not sucesso: break
     
+    # Processa YOLO
     resultados = modelo(frame, stream=True)
-    itens_frame = []
+    itens_atuais = []
+    for r in resultados:
+        frame = r.plot()
+        for cls_id in r.boxes.cls.tolist():
+            itens_atuais.append(r.names[int(cls_id)].lower())
     
-    for resultado in resultados:
-        frame_anotado = resultado.plot()
-        classes_ids = resultado.boxes.cls.tolist()
-        for cls_id in classes_ids:
-            itens_frame.append(resultado.names[int(cls_id)].lower())
+    contagem_frame = Counter(itens_atuais)
 
-    contagem_atual = Counter(itens_frame)
-
-    # --- LÓGICA DA BARRA ---
-    largura_barra = 0
-    cor_barra = (0, 255, 255)
-    pronto_para_salvar = False
-
-    if itens_frame:
-        if inicio_contagem is None:
-            inicio_contagem = time.time()
-        tempo_passado = time.time() - inicio_contagem
-        largura_barra = int(min(tempo_passado / 5.0, 1.0) * 200)
-        if tempo_passado >= 5:
-            cor_barra = (0, 255, 0)
-            pronto_para_salvar = True
+    # Lógica do Temporizador
+    percentual, pronto = 0, False
+    if itens_atuais:
+        if inicio_timer is None: inicio_timer = time.time()
+        decorrido = time.time() - inicio_timer
+        percentual = min(int((decorrido / 5.0) * 100), 100)
+        pronto = decorrido >= 5
     else:
-        inicio_contagem = None
+        inicio_timer = None
 
-    # --- INTERFACE VISUAL (PAINEL LATERAL) ---
-    # Fundo lateral maior para caber todos os blocos
-    overlay = frame_anotado.copy()
-    cv2.rectangle(overlay, (10, 10), (300, 460), (0, 0, 0), -1)
-    cv2.addWeighted(overlay, 0.7, frame_anotado, 0.3, 0, frame_anotado)
+    # Monta a tela final com o Footer Horizontal
+    tela_final = desenhar_footer(frame, contagem_frame, historico_total, peso_total, valor_total, percentual, pronto)
 
-    # 1. Barra de Progresso
-    cv2.rectangle(frame_anotado, (50, 30), (250, 40), (255, 255, 255), 1)
-    if largura_barra > 0:
-        cv2.rectangle(frame_anotado, (50, 30), (50 + largura_barra, 40), cor_barra, -1)
-
-    # 2. BLOCO: NA RAMPA AGORA
-    y_pos = 75
-    cv2.putText(frame_anotado, "LIDO PELA CAMERA:", (30, y_pos), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 1)
-    y_pos += 25
-    for item, qtd in contagem_atual.items():
-        cv2.putText(frame_anotado, f"- {item.capitalize()}: {qtd}un", (40, y_pos), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
-        y_pos += 20
-
-    # 3. BLOCO: HISTÓRICO DE QUANTIDADE
-    y_pos += 20
-    cv2.line(frame_anotado, (30, y_pos), (270, y_pos), (100, 100, 100), 1)
-    y_pos += 25
-    cv2.putText(frame_anotado, "QUANTIDADE TOTAL SALVA:", (30, y_pos), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 165, 0), 1) # Laranja
-    y_pos += 25
-    for item, qtd in historico_total.items():
-        cv2.putText(frame_anotado, f"{item.capitalize()}: {qtd} un", (40, y_pos), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (200, 200, 200), 1)
-        y_pos += 20
-
-    # 4. BLOCO: CUSTO E PESO (O que você pediu agora)
-    y_pos += 20
-    cv2.line(frame_anotado, (30, y_pos), (270, y_pos), (100, 100, 100), 1)
-    y_pos += 30
-    # Texto em destaque para Peso e Valor
-    cv2.putText(frame_anotado, f"PESO TOTAL: {peso_acumulado:.2f} kg", (30, y_pos), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
-    y_pos += 30
-    cv2.putText(frame_anotado, f"VALOR TOTAL: R$ {valor_acumulado:.2f}", (30, y_pos), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
-
-    # Rodapé de instrução
-    if pronto_para_salvar:
-        cv2.putText(frame_anotado, "PRONTO! APERTE [S]", (75, 450), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
-
-    cv2.imshow("Sistema de Triagem Integrado - Paschoal", frame_anotado)
+    cv2.imshow("Triagem Logistica FECAP - Professional", tela_final)
     
     key = cv2.waitKey(1) & 0xFF
-    if key == ord('s') and pronto_para_salvar:
-        # Atualiza quantidades, peso e valor
-        for item, qtd in contagem_atual.items():
+    if key == ord('s') and pronto:
+        for item, qtd in contagem_frame.items():
             info = TABELA_PRODUTOS.get(item, {"peso": 0, "valor": 0})
             historico_total[item] += qtd
-            peso_acumulado += info["peso"] * qtd
-            valor_acumulado += info["valor"] * qtd
-        
-        print("Dados confirmados e salvos!")
-        inicio_contagem = None # Reseta o timer para o próximo item
-        
+            peso_total += info["peso"] * qtd
+            valor_total += info["valor"] * qtd
+        inicio_timer = None
     elif key == ord('q'):
         break
 
