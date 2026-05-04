@@ -1,6 +1,8 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Login from './pages/Login';
 import ProtectedRoute from './ProtectedRoute';
+import AlunoPainel from './pages/AlunoPainel';
+import AdminPainel from './pages/AdminPainel';
 
 function App() {
   return (
@@ -9,12 +11,12 @@ function App() {
         <Route path="/" element={<Login />} />
         <Route path="/admin" element={
           <ProtectedRoute>
-            <h1>Painel Administrativo</h1>
+            <AdminPainel />
           </ProtectedRoute>
         } />
-        <Route path="/patrocinador" element={
+        <Route path="/aluno" element={
           <ProtectedRoute>
-            <h1>Painel do Patrocinador</h1>
+            <AlunoPainel />
           </ProtectedRoute>
         } />
       </Routes>

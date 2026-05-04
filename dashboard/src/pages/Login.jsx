@@ -21,7 +21,8 @@ const Login = () => {
     password: '',
     confirmPassword: '',
     name: '',
-    role: 'patrocinador'
+    role: 'aluno',
+    equipe: ''  // NOVO CAMPO
   });
   const [message, setMessage] = useState({ text: '', type: '' });
   const navigate = useNavigate();
@@ -39,8 +40,21 @@ const Login = () => {
       password: '',
       confirmPassword: '',
       name: '',
-      role: 'patrocinador'
+      role: 'aluno',
+      equipe: ''
     });
+  };
+
+  // Função para normalizar o cargo (aceita "Admin", "admin", "administrador")
+  const normalizarCargo = (cargo) => {
+    if (!cargo) return 'aluno';
+    const cargoLower = cargo.toLowerCase();
+    
+    if (cargoLower === 'admin' || cargoLower === 'administrador') {
+      return 'administrador';
+    }
+    
+    return 'aluno';
   };
 
   // LOGIN
@@ -57,22 +71,26 @@ const Login = () => {
       
       if (userDoc.exists()) {
         const userData = userDoc.data();
-        const cargo = userData.cargo;
+        const cargoOriginal = userData.cargo;
+        
+        // NORMALIZA O CARGO (converte "Admin" para "administrador")
+        const cargoNormalizado = normalizarCargo(cargoOriginal);
         
         localStorage.setItem('user', JSON.stringify({
           uid: user.uid,
           email: user.email,
           nome: userData.nome,
-          cargo: cargo,
+          cargo: cargoNormalizado,  // Salva o cargo já normalizado
           equipe: userData.equipe || ''
         }));
         
         setLoading(false);
         
-        if (cargo === 'admin') {
+        // Redireciona baseado no cargo normalizado
+        if (cargoNormalizado === 'administrador') {
           navigate('/admin');
         } else {
-          navigate('/patrocinador');
+          navigate('/aluno');
         }
       } else {
         setLoading(false);
@@ -124,6 +142,7 @@ const Login = () => {
     setLoading(true);
     setMessage({ text: '', type: '' });
     
+    // Validações
     if (newAccount.password !== newAccount.confirmPassword) {
       setMessage({ text: "As senhas não coincidem", type: 'error' });
       setLoading(false);
@@ -132,6 +151,13 @@ const Login = () => {
     
     if (newAccount.password.length < 6) {
       setMessage({ text: "A senha deve ter pelo menos 6 caracteres", type: 'error' });
+      setLoading(false);
+      return;
+    }
+    
+    // Se for aluno, precisa selecionar a equipe
+    if (newAccount.role === 'aluno' && !newAccount.equipe) {
+      setMessage({ text: "Selecione sua equipe", type: 'error' });
       setLoading(false);
       return;
     }
@@ -146,10 +172,19 @@ const Login = () => {
       
       await updateProfile(user, { displayName: newAccount.name });
       
+      // Define o cargo a ser salvo no banco
+      // Se for aluno, salva como "aluno"; se for admin, salva como "Admin" (para compatibilidade com app)
+      let cargoParaSalvar;
+      if (newAccount.role === 'administrador') {
+        cargoParaSalvar = 'Admin';  // Salva como "Admin" para ser consistente com o app
+      } else {
+        cargoParaSalvar = 'aluno';
+      }
+      
       await setDoc(doc(db, "users", user.uid), {
-        cargo: newAccount.role,
+        cargo: cargoParaSalvar,
         email: newAccount.email,
-        equipe: "",
+        equipe: newAccount.role === 'aluno' ? newAccount.equipe : '',
         nome: newAccount.name,
         uid: user.uid,
         createdAt: new Date().toISOString()
@@ -284,13 +319,30 @@ const Login = () => {
             <div style={styles.inputGroup}>
               <select 
                 value={newAccount.role}
-                onChange={(e) => setNewAccount({...newAccount, role: e.target.value})} 
+                onChange={(e) => setNewAccount({...newAccount, role: e.target.value, equipe: ''})} 
                 style={styles.input}
               >
-                <option value="patrocinador">Patrocinador</option>
-                <option value="admin">Administrador</option>
+                <option value="aluno">Aluno</option>
+                <option value="administrador">Administrador</option>
               </select>
             </div>
+            
+            {/* Campo de equipe - aparece APENAS para alunos */}
+            {newAccount.role === 'aluno' && (
+              <div style={styles.inputGroup}>
+                <select 
+                  value={newAccount.equipe}
+                  onChange={(e) => setNewAccount({...newAccount, equipe: e.target.value})} 
+                  style={styles.input}
+                  required
+                >
+                  <option value="">Selecione sua equipe</option>
+                  <option value="Equipe 1">Equipe 1</option>
+                  <option value="Equipe 2">Equipe 2</option>
+                  <option value="Equipe 3">Equipe 3</option>
+                </select>
+              </div>
+            )}
             
             <button type="submit" disabled={loading} style={styles.button}>
               {loading ? "Criando..." : "Criar conta"}
