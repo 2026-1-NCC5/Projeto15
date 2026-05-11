@@ -81,6 +81,35 @@ npm install
 npm start
 <br>
 
+# 🚀 Instalação e Execução do site da Câmera
+
+## Backend (Python)
+
+```bash
+pip install opencv-python ultralytics flask flask-cors firebase-admin numpy
+```
+
+## Frontend (React)
+
+```bash
+cd lecontagem-dashboard
+npm install
+npm install firebase
+```
+
+## Para iniciar
+
+```bash
+# Terminal 1 — backend
+py camera.py
+```
+
+```bash
+# Terminal 2 — frontend
+cd lecontagem-dashboard
+npm start
+```
+
 ## 📋 Licença/License
 <p>
 <a> Projeto Lideranças Empáticas</a> © 2026 by Daniel Kyoshi Moribe, Gabriel Higobassi Paschoal, Lucas Silva Maciel, Thiago Akira Higa Mitami</a> is licensed under 
