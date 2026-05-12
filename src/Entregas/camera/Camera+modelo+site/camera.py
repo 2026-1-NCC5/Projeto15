@@ -17,11 +17,16 @@ from datetime import datetime
 import firebase_admin
 from firebase_admin import credentials, firestore
 
-# SUBSTITUA pelo caminho do seu arquivo de credenciais do Firebase
-# Baixe em: Firebase Console → Configurações → Contas de serviço → Gerar nova chave privada
+# ── Caminho do arquivo de credenciais ─────────────────────────────────────
+# Coloque o arquivo .json na mesma pasta do camera.py (mais simples no Windows)
+# e use os.path para montar o caminho sem precisar de barras invertidas.
+_BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+_KEY_FILE  = os.path.join(_BASE_DIR, "serviceAccountKey.json")
 
-_dir = os.path.dirname(os.path.abspath(__file__))
-cred = credentials.Certificate(os.path.join(_dir, r"C:\Users\21010656\Documents\GitHub\Projeto15\src\Entregas\camera\Camera+modelo+site\lecontagem-1d7e2-firebase-adminsdk-fbsvc-ab3167baae.json"))
+# Se quiser usar caminho absoluto no Windows, use r"" (raw string):
+# _KEY_FILE = r"C:\Users\SeuUsuario\...\serviceAccountKey.json"
+
+cred = credentials.Certificate(_KEY_FILE)
 firebase_admin.initialize_app(cred)
 db = firestore.client()
 # ────────────────────────────────────────────────────────────────────────────
@@ -210,46 +215,71 @@ def stats():
 
 @app.route('/salvar_lote', methods=['POST'])
 def salvar_lote():
+    try:
+        payload       = request.get_json(force=True) or {}
+        equipe_nome   = payload.get("equipe_nome",   "")
+        equipe_id     = payload.get("equipe_id",     "")
+        usuario_uid   = payload.get("usuario_uid",   "")
+        usuario_nome  = payload.get("usuario_nome",  "")
+        usuario_email = payload.get("usuario_email", "")
+
+        with lock:
+            snap = dict(telemetria)
+
+        print(f"[SALVAR] payload recebido: equipe={equipe_nome}, usuario={usuario_nome}")
+        print(f"[SALVAR] telemetria: peso={snap.get('peso')}, itens={snap.get('itens_txt')}")
+
+        if not snap.get("itens_detalhados") and snap.get("peso", 0) <= 0:
+            print("[SALVAR] ERRO: nenhum item detectado na telemetria")
+            return jsonify({"erro": "Nenhum item detectado"}), 400
+
+        agora = datetime.now()
+        itens = snap.get("itens_detalhados", [])
+        
+        documento = {
+            "usuarioNome":  usuario_nome,
+            "usuarioUid":   usuario_uid,
+            "usuarioEmail": usuario_email,
+            "equipe":       equipe_nome,
+            "equipeId":     equipe_id,
+            "dataRegistro": agora.strftime("%d/%m/%Y %H:%M:%S"),
+            "itensTxt":     snap.get("itens_txt", ""),
+            "pesoTotal":    float(snap.get("peso", 0)),
+            "valorTotal":   float(snap.get("valor", 0)),
+            "alimentos":    itens,
+        }
+
+        # Firestore cria a colecao automaticamente se nao existir
+        ref = db.collection("contagem").document()
+        ref.set(documento)
+
+        print(f"[SALVAR] OK — doc_id={ref.id}")
+        return jsonify({"sucesso": True, "doc_id": ref.id})
+
+    except Exception as e:
+        print(f"[SALVAR] EXCECAO: {e}")
+        import traceback; traceback.print_exc()
+        return jsonify({"erro": str(e)}), 500
+
+
+@app.route('/teste_firebase', methods=['GET'])
+def teste_firebase():
+    """Chame este endpoint no navegador para testar se o Firestore esta funcionando.
+    URL: http://localhost:5000/teste_firebase
     """
-    Recebe do front-end: { equipe_id, equipe_nome }
-    Combina com a telemetria atual e persiste na coleção 'camera' do Firestore.
-    Chaves primárias lógicas: equipe_id  +  id do documento (gerado pelo Firestore).
-    """
-    payload = request.get_json(force=True)
-    equipe_id    = payload.get("equipe_id",    "")
-    equipe_nome  = payload.get("equipe_nome",  "")
-    usuario_uid  = payload.get("usuario_uid",  "")
-    usuario_nome = payload.get("usuario_nome", "")
-
-    with lock:
-        snap = dict(telemetria)   # cópia segura
-
-    if snap.get("peso", 0) <= 0:
-        return jsonify({"erro": "Nenhum item para salvar"}), 400
-
-    documento = {
-        # ── Equipe (campo equipe do documento users) ───
-        "equipe": equipe_nome,          # ex: "Equipe 2"
-        "equipe_usuario_id": equipe_id, # doc ID em users
-        # ── Usuário que realizou o registro ───────────
-        "usuario": {
-            "uid":  usuario_uid,
-            "nome": usuario_nome,
-        },
-        # ── Dados da leitura ───────────────────────────
-        "horario":     datetime.now().isoformat(timespec="seconds"),
-        "itens_txt":   snap["itens_txt"],
-        "peso_total":  snap["peso"],
-        "valor_total": snap["valor"],
-        # ── Detalhamento por produto ───────────────────
-        "alimentos":   snap["itens_detalhados"],
-    }
-
-    # Salva e obtém referência com ID automático
-    ref = db.collection("camera").document()
-    ref.set(documento)
-
-    return jsonify({"sucesso": True, "doc_id": ref.id})
+    try:
+        ref = db.collection("contagem").document()
+        ref.set({
+            "teste": True,
+            "mensagem": "Conexao Firebase OK",
+            "horario": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
+        })
+        print(f"[TESTE] Firebase OK — doc_id={ref.id}")
+        return jsonify({"ok": True, "doc_id": ref.id, "mensagem": "Documento criado com sucesso!"})
+    except Exception as e:
+        print(f"[TESTE] Firebase FALHOU: {e}")
+        import traceback; traceback.print_exc()
+        return jsonify({"ok": False, "erro": str(e)}), 500
 
 
 if __name__ == '__main__':

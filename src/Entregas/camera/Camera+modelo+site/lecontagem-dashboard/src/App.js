@@ -1,3 +1,4 @@
+import './App.css';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Database, Save, Activity, Trash2, ClipboardList,
@@ -13,13 +14,14 @@ import { getFirestore, collection,
          query, where, getDocs }              from 'firebase/firestore';
 
 const firebaseConfig = {
-  apiKey:            "AIzaSyDBLkJUFcmwnixj32jCr-ZW1uUG7uBXvb8",
+
+   apiKey:            "AIzaSyDBLkJUFcmwnixj32jCr-ZW1uUG7uBXvb8",
   authDomain:        "lecontagem-1d7e2.firebaseapp.com",
   projectId:         "lecontagem-1d7e2",
   storageBucket:     "lecontagem-1d7e2.firebasestorage.app",
   messagingSenderId: "730486633380",
   appId:             "1:730486633380:web:5309eaed143c8759b68731",
-  measurementId: "G-MBBLVL0TX9"
+  
 };
 
 const FIREBASE_CONFIGURADO =
@@ -38,109 +40,7 @@ if (FIREBASE_CONFIGURADO) {
 }
 // ────────────────────────────────────────────────────────────────────────────
 
-// ── Estilos globais injetados ───────────────────────────────────────────────
-const GLOBAL_CSS = `
-  @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap');
 
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-  :root {
-    --bg:        #07090d;
-    --surface:   #0d1117;
-    --elevated:  #131a23;
-    --border:    rgba(255,255,255,0.06);
-    --border-hi: rgba(255,255,255,0.12);
-    --orange:    #f97316;
-    --orange-dim: rgba(249,115,22,0.15);
-    --green:     #22c55e;
-    --green-dim: rgba(34,197,94,0.08);
-    --red:       #ef4444;
-    --amber:     #fbbf24;
-    --text:      #c8d0d8;
-    --muted:     #3d4f63;
-    --font-head: 'Barlow Condensed', sans-serif;
-    --font-mono: 'JetBrains Mono', monospace;
-  }
-
-  body { background: var(--bg); color: var(--text); font-family: var(--font-mono); }
-
-  /* dot grid background */
-  .dot-grid {
-    background-image: radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px);
-    background-size: 24px 24px;
-  }
-
-  /* corner bracket decoration */
-  .bracket::before, .bracket::after {
-    content: '';
-    position: absolute;
-    width: 14px; height: 14px;
-    border-color: var(--orange);
-    border-style: solid;
-    opacity: 0.5;
-  }
-  .bracket::before { top: -1px; left: -1px; border-width: 2px 0 0 2px; }
-  .bracket::after  { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; }
-
-  /* pulsing dot */
-  @keyframes pulse-dot {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50%       { opacity: 0.4; transform: scale(0.7); }
-  }
-  .pulse-dot { animation: pulse-dot 1.4s ease-in-out infinite; }
-
-  /* scan line sweep */
-  @keyframes scan {
-    0%   { transform: translateY(-100%); opacity: 0; }
-    10%  { opacity: 0.6; }
-    90%  { opacity: 0.6; }
-    100% { transform: translateY(100vh); opacity: 0; }
-  }
-  .scan-line {
-    position: absolute; inset-x: 0; height: 2px;
-    background: linear-gradient(90deg, transparent, var(--orange), transparent);
-    animation: scan 3s linear infinite;
-    pointer-events: none;
-  }
-
-  /* fade-in stagger */
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(12px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-  .fade-up { animation: fadeUp 0.4s ease both; }
-  .fade-up-1 { animation-delay: 0.05s; }
-  .fade-up-2 { animation-delay: 0.10s; }
-  .fade-up-3 { animation-delay: 0.15s; }
-  .fade-up-4 { animation-delay: 0.20s; }
-
-  /* number glow */
-  .num-glow { text-shadow: 0 0 20px rgba(249,115,22,0.35); }
-  .num-glow-green { text-shadow: 0 0 20px rgba(34,197,94,0.35); }
-
-  /* scrollbar */
-  .thin-scroll::-webkit-scrollbar { width: 3px; }
-  .thin-scroll::-webkit-scrollbar-track { background: transparent; }
-  .thin-scroll::-webkit-scrollbar-thumb { background: var(--muted); border-radius: 2px; }
-
-  /* button hover lift */
-  .btn-lift { transition: transform 0.12s, box-shadow 0.12s; }
-  .btn-lift:not(:disabled):hover { transform: translateY(-1px); }
-  .btn-lift:not(:disabled):active { transform: translateY(0); }
-
-  /* input focus glow */
-  .input-field:focus { border-color: var(--orange) !important; box-shadow: 0 0 0 3px rgba(249,115,22,0.12); outline: none; }
-`;
-
-function GlobalStyles() {
-  useEffect(() => {
-    const el = document.createElement('style');
-    el.textContent = GLOBAL_CSS;
-    document.head.appendChild(el);
-    return () => document.head.removeChild(el);
-  }, []);
-  return null;
-}
 
 // ── Helpers UI ──────────────────────────────────────────────────────────────
 const Label = ({ children, color = 'var(--muted)' }) => (
@@ -170,7 +70,6 @@ const Card = ({ children, style, className = '' }) => (
 function TelaConfiguracao() {
   return (
     <>
-      <GlobalStyles />
       <div className="dot-grid" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
         <Card style={{ padding: '2rem', maxWidth: 420, width: '100%', borderColor: 'rgba(249,115,22,0.3)' }}>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 20 }}>
@@ -232,7 +131,6 @@ function TelaLogin({ onLogin }) {
 
   return (
     <>
-      <GlobalStyles />
       <div className="dot-grid" style={{
         minHeight: '100vh', display: 'flex', position: 'relative', overflow: 'hidden',
       }}>
@@ -374,6 +272,7 @@ function App() {
   const [pesoAcumulado,  setPesoAcumulado]  = useState(0);
   const [valorAcumulado, setValorAcumulado] = useState(0);
   const [salvando,       setSalvando]       = useState(false);
+  const [saveMsg,        setSaveMsg]        = useState(null); // null | 'ok' | 'erro'
   const timerRef = useRef(null);
 
   // ── Auth listener ────────────────────────────────────────────────────────
@@ -403,7 +302,13 @@ function App() {
     if (isStreaming === null) return;
     if (isStreaming) {
       timerRef.current = setInterval(() => {
-        fetch('http://localhost:5000/stats').then(r => r.json()).then(d => setData(d)).catch(() => {});
+        fetch('http://localhost:5000/stats').then(r => r.json()).then(d => setData(prev => ({
+          ...prev,
+          ...d,
+          itens_detalhados: d.itens_detalhados || d.itens_frame || [],
+          peso:  Number(d.peso  ?? prev.peso  ?? 0),
+          valor: Number(d.valor ?? prev.valor ?? 0),
+        }))).catch(() => {});
       }, 400);
     } else {
       clearInterval(timerRef.current);
@@ -427,22 +332,59 @@ function App() {
   };
 
   const salvarLote = async () => {
-    if (data.peso <= 0 || salvando || !usuario) return;
+    const itens = data.itens_detalhados || [];
+    if (itens.length === 0 || salvando || !usuario) return;
+
     setSalvando(true);
+    setSaveMsg(null);
+    console.log('[SALVAR] Iniciando... itens=', itens);
+
     try {
+      const payload = {
+        equipe_id:     usuario.id     || '',
+        equipe_nome:   usuario.equipe || '',
+        usuario_uid:   usuario.uid    || '',
+        usuario_nome:  usuario.nome   || '',
+        usuario_email: usuario.email  || '',
+      };
+      console.log('[SALVAR] payload=', payload);
+
       const res = await fetch('http://localhost:5000/salvar_lote', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ equipe_id: usuario.id, equipe_nome: usuario.equipe, usuario_uid: usuario.uid, usuario_nome: usuario.nome }),
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
       });
+
+      console.log('[SALVAR] HTTP status=', res.status);
       const json = await res.json();
+      console.log('[SALVAR] resposta=', json);
+
       if (json.sucesso) {
-        const reg = { id: json.doc_id, hora: new Date().toLocaleTimeString(), itens: data.itens_txt, peso: Number(data.peso), valor: Number(data.valor), alimentos: data.itens_detalhados || [] };
+        const reg = {
+          id:        json.doc_id,
+          hora:      new Date().toLocaleTimeString(),
+          itens:     data.itens_txt  || '',
+          peso:      Number(data.peso  || 0),
+          valor:     Number(data.valor || 0),
+          alimentos: itens,
+        };
         setHistorico(p => [reg, ...p]);
-        setPesoAcumulado(p => p + Number(data.peso));
-        setValorAcumulado(p => p + Number(data.valor));
+        setPesoAcumulado(p => p + reg.peso);
+        setValorAcumulado(p => p + reg.valor);
+        setSaveMsg('ok');
+        setTimeout(() => setSaveMsg(null), 3000);
+      } else {
+        console.error('[SALVAR] Erro do servidor:', json.erro);
+        setSaveMsg('erro');
+        setTimeout(() => setSaveMsg(null), 4000);
       }
-    } catch (e) { console.error(e); }
-    finally { setSalvando(false); }
+    } catch (e) {
+      console.error('[SALVAR] Exceção:', e);
+      setSaveMsg('erro');
+      setTimeout(() => setSaveMsg(null), 4000);
+    } finally {
+      setSalvando(false);
+    }
   };
 
   const removerRegistro = (reg) => {
@@ -456,7 +398,6 @@ function App() {
 
   if (authState === 'checking') return (
     <>
-      <GlobalStyles />
       <div className="dot-grid" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ textAlign: 'center' }}>
           <Activity size={28} color="var(--orange)" style={{ opacity: 0.4 }} />
@@ -479,7 +420,6 @@ function App() {
   // ── Dashboard ─────────────────────────────────────────────────────────────
   return (
     <>
-      <GlobalStyles />
       <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
 
         {/* ── TOP BAR ──────────────────────────────────────────────────── */}
@@ -706,20 +646,20 @@ function App() {
               {/* Save button */}
               <button
                 onClick={salvarLote}
-                disabled={data.peso <= 0 || salvando}
+                disabled={((!data.itens_detalhados || data.itens_detalhados.length === 0) && data.peso <= 0) || salvando}
                 className="btn-lift"
                 style={{
                   flex: 1, borderRadius: 10, border: 'none',
-                  background: data.peso > 0 && !salvando ? 'var(--orange)' : 'var(--elevated)',
-                  color: data.peso > 0 && !salvando ? '#fff' : 'var(--muted)',
+                  background: saveMsg === 'ok' ? 'var(--green)' : saveMsg === 'erro' ? 'var(--red)' : (data.itens_detalhados?.length > 0 || data.peso > 0) ? 'var(--orange)' : 'var(--elevated)',
+                  color: (data.itens_detalhados?.length > 0 || data.peso > 0) ? '#fff' : 'var(--muted)',
                   fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: 14,
                   textTransform: 'uppercase', letterSpacing: '0.1em', cursor: 'pointer',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                  boxShadow: data.peso > 0 && !salvando ? '0 4px 20px rgba(249,115,22,0.3)' : 'none',
+                  boxShadow: (data.itens_detalhados?.length > 0 || data.peso > 0) && !salvando ? '0 4px 20px rgba(249,115,22,0.3)' : 'none',
                   transition: 'background 0.15s, box-shadow 0.15s, color 0.15s',
                 }}>
                 <Save size={16} />
-                {salvando ? 'SALVANDO…' : 'SALVAR REGISTRO'}
+                {salvando ? 'SALVANDO…' : saveMsg === 'ok' ? '✓ SALVO!' : saveMsg === 'erro' ? '✗ ERRO — VER CONSOLE' : 'SALVAR REGISTRO'}
               </button>
             </div>
           </main>
