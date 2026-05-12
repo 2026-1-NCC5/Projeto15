@@ -168,6 +168,90 @@ const injectGlobalStyles = () => {
 };
 
 // ============================================================
+// UTILITÁRIO DE FORMATAÇÃO NUMÉRICA
+// ============================================================
+const fmt = (n) => {
+  if (n === null || n === undefined || isNaN(n)) return '0';
+  const num = Number(n);
+  return Number.isInteger(num) ? String(num) : num.toFixed(2);
+};
+
+// ============================================================
+// PARSE DE DATA — suporta "DD/MM/YYYY HH:mm:ss", "DD/MM/YYYY" e ISO
+// ============================================================
+const parseData = (str) => {
+  if (!str) return new Date(0);
+  // Formato câmera/app: "DD/MM/YYYY HH:mm:ss" ou "DD/MM/YYYY"
+  if (/^\d{2}\/\d{2}\/\d{4}/.test(str)) {
+    const [datePart, timePart = '00:00:00'] = str.split(' ');
+    const [dia, mes, ano] = datePart.split('/');
+    return new Date(`${ano}-${mes}-${dia}T${timePart}`);
+  }
+  // Fallback para ISO ou outros formatos
+  const d = new Date(str);
+  return isNaN(d) ? new Date(0) : d;
+};
+
+// ============================================================
+// NORMALIZAÇÃO DE ALIMENTOS
+// ============================================================
+const normalizarAlimento = (valor = '') => {
+  const mapa = {
+    'arroz':    'Arroz',
+    'feijao':   'Feijão',
+    'feijão':   'Feijão',
+    'oleo':     'Óleo',
+    'óleo':     'Óleo',
+    'cafe':     'Café',
+    'café':     'Café',
+    'macarrao': 'Macarrão',
+    'macarrão': 'Macarrão',
+    'acucar':   'Açúcar',
+    'açúcar':   'Açúcar',
+  };
+  const chave = valor.toLowerCase().trim();
+  return mapa[chave] || valor;
+};
+
+// ============================================================
+// EXPLODE DOCUMENTOS DO FIRESTORE → REGISTROS NORMALIZADOS
+// Câmera: campo "alimentos" (array) → um registro por item
+// App:    campos raiz diretos
+// ============================================================
+const explodirDoc = (doc) => {
+  const d = doc.data ? doc.data() : doc;
+  const id = doc.id || doc._id || '';
+  const ehCamera = Array.isArray(d.alimentos) && d.alimentos.length > 0;
+
+  if (ehCamera) {
+    return d.alimentos.map((item, idx) => ({
+      id:           `${id}_${idx}`,
+      alimento:     normalizarAlimento(item.nome || ''),
+      quantidade:   (item.quantidade || 0) * (item.peso || 1),
+      usuarioNome:  d.usuarioNome  || d.usuarioEmail || '–',
+      usuarioEmail: d.usuarioEmail || '–',
+      dataRegistro: d.dataRegistro || '',
+      equipe:       d.equipe       || '',
+      origem:       'camera',
+    }));
+  }
+
+  // ✅ CORREÇÃO: ignora docs do App sem dados essenciais
+  if (!d.alimento && !d.equipe) return [];
+
+  return [{
+    id,
+    alimento:     normalizarAlimento(d.alimento || ''),
+    quantidade:   d.quantidade || 0,
+    usuarioNome:  d.usuarioNome  || d.usuarioEmail || '–',
+    usuarioEmail: d.usuarioEmail || '–',
+    dataRegistro: d.dataRegistro || '',
+    equipe:       d.equipe       || '',
+    origem:       'app',
+  }];
+};
+
+// ============================================================
 // TOKENS DE DESIGN
 // ============================================================
 const T = {
@@ -205,7 +289,6 @@ const T = {
 const isCargoAdmin = (valor) => {
   if (!valor) return false;
   const v = String(valor).toLowerCase().trim();
-  // Aceita: admin, administrador, adm, administrator, ADMIN, Admin, etc.
   return ['admin', 'administrador', 'adm', 'administrator'].includes(v);
 };
 
@@ -219,7 +302,7 @@ const AdminPainel = () => {
   const [sidebarAberta, setSidebarAberta] = useState(true);
   const [abaAtiva, setAbaAtiva]       = useState('visaogeral');
 
-  // ── Dados ──
+  // ── Dados (já normalizados/explodidos) ──
   const [todasDoacoes, setTodasDoacoes]   = useState([]);
   const [ranking, setRanking]             = useState([]);
   const [usuarios, setUsuarios]           = useState([]);
@@ -230,6 +313,7 @@ const AdminPainel = () => {
   const [filtroEquipe, setFiltroEquipe]         = useState('');
   const [filtroAlimento, setFiltroAlimento]     = useState('');
   const [filtroMembro, setFiltroMembro]         = useState('');
+  const [filtroOrigem, setFiltroOrigem]         = useState('');
   const [filtroDataInicio, setFiltroDataInicio] = useState('');
   const [filtroDataFim, setFiltroDataFim]       = useState('');
 
@@ -256,7 +340,6 @@ const AdminPainel = () => {
 
     const verificarAdmin = async () => {
       try {
-        // ── Busca por email (case-insensitive: tenta o email original e também em lowercase) ──
         const emailOriginal = userData.email || '';
         const emailLower    = emailOriginal.toLowerCase().trim();
 
@@ -264,23 +347,19 @@ const AdminPainel = () => {
           query(collection(db, 'users'), where('email', '==', emailOriginal))
         );
 
-        // Se não achou com o email original, tenta lowercase
         if (snap.empty && emailLower !== emailOriginal) {
           snap = await getDocs(
             query(collection(db, 'users'), where('email', '==', emailLower))
           );
         }
 
-        // Se ainda não achou, faz busca geral e filtra manualmente (fallback)
         if (snap.empty) {
           const allUsers = await getDocs(collection(db, 'users'));
           const match = allUsers.docs.find(d => {
             const docEmail = (d.data().email || '').toLowerCase().trim();
             return docEmail === emailLower;
           });
-          if (match) {
-            snap = { empty: false, docs: [match] };
-          }
+          if (match) snap = { empty: false, docs: [match] };
         }
 
         if (snap.empty) {
@@ -290,16 +369,9 @@ const AdminPainel = () => {
         }
 
         const docData = snap.docs[0].data();
-
-        // Verifica cargo em todos os campos possíveis
         const cargoValor =
-          docData.cargo       ||
-          docData.role        ||
-          docData.tipo        ||
-          docData.type        ||
-          docData.perfil      ||
-          docData.nivel       ||
-          '';
+          docData.cargo  || docData.role   || docData.tipo  ||
+          docData.type   || docData.perfil || docData.nivel || '';
 
         if (!isCargoAdmin(cargoValor)) {
           setAuthError(`Acesso restrito. Cargo encontrado: "${cargoValor || 'nenhum'}". É necessário ser admin.`);
@@ -307,12 +379,7 @@ const AdminPainel = () => {
           return;
         }
 
-        // Tudo certo — salva e carrega
-        const userCompleto = {
-          ...userData,
-          cargo: cargoValor,
-          uid: snap.docs[0].id,
-        };
+        const userCompleto = { ...userData, cargo: cargoValor, uid: snap.docs[0].id };
         localStorage.setItem('user', JSON.stringify(userCompleto));
         setUser(userCompleto);
         await carregarDados();
@@ -326,33 +393,33 @@ const AdminPainel = () => {
     verificarAdmin();
   }, []);
 
+  // ============================================================
+  // CARREGAR DADOS
+  // ============================================================
   const carregarDados = async () => {
     setLoading(true);
     try {
-      // ── Todas as doações ──
       const doacoesSnap = await getDocs(collection(db, 'contagem'));
-      const rawDocs = doacoesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const rawDocs = doacoesSnap.docs.flatMap(explodirDoc);
       setTodasDoacoes(rawDocs);
 
-      // ── Ranking por equipe ──
       const equipesMap = new Map();
       rawDocs.forEach(d => {
-        equipesMap.set(d.equipe, (equipesMap.get(d.equipe) || 0) + (d.quantidade || 0));
+        const eq = d.equipe || '';
+        if (!eq) return;
+        equipesMap.set(eq, (equipesMap.get(eq) || 0) + (d.quantidade || 0));
       });
       const rankingList = Array.from(equipesMap.entries())
         .map(([nome, total]) => ({ nome, total }))
         .sort((a, b) => b.total - a.total);
       setRanking(rankingList);
 
-      // ── Lista de equipes únicas ──
       const equipesUnicas = [...new Set(rawDocs.map(d => d.equipe).filter(Boolean))];
       setEquipes(equipesUnicas.sort());
 
-      // ── Usuários ──
       const usersSnap = await getDocs(collection(db, 'users'));
       setUsuarios(usersSnap.docs.map(d => ({ id: d.id, ...d.data() })));
 
-      // ── Metas ──
       const metasSnap = await getDocs(collection(db, 'metas'));
       setMetas(metasSnap.docs.map(d => ({ id: d.id, ...d.data() })));
 
@@ -380,9 +447,10 @@ const AdminPainel = () => {
       if (filtroEquipe   && d.equipe     !== filtroEquipe)   return false;
       if (filtroAlimento && d.alimento   !== filtroAlimento) return false;
       if (filtroMembro   && d.usuarioNome !== filtroMembro)  return false;
+      if (filtroOrigem   && d.origem      !== filtroOrigem)  return false;
       if (filtroDataInicio || filtroDataFim) {
-        const dt = d.dataRegistro ? new Date(d.dataRegistro) : null;
-        if (!dt) return false;
+        const dt = d.dataRegistro ? parseData(d.dataRegistro) : null;
+        if (!dt || dt.getTime() === 0) return false;
         if (filtroDataInicio && dt < new Date(filtroDataInicio)) return false;
         if (filtroDataFim) {
           const fim = new Date(filtroDataFim); fim.setHours(23,59,59,999);
@@ -391,27 +459,36 @@ const AdminPainel = () => {
       }
       return true;
     });
-  }, [todasDoacoes, filtroEquipe, filtroAlimento, filtroMembro, filtroDataInicio, filtroDataFim]);
+  }, [todasDoacoes, filtroEquipe, filtroAlimento, filtroMembro, filtroOrigem, filtroDataInicio, filtroDataFim]);
 
-  const filtrosAtivos = filtroEquipe || filtroAlimento || filtroMembro || filtroDataInicio || filtroDataFim;
-  const limparFiltros = () => { setFiltroEquipe(''); setFiltroAlimento(''); setFiltroMembro(''); setFiltroDataInicio(''); setFiltroDataFim(''); };
+  const filtrosAtivos = filtroEquipe || filtroAlimento || filtroMembro || filtroOrigem || filtroDataInicio || filtroDataFim;
+  const limparFiltros = () => {
+    setFiltroEquipe(''); setFiltroAlimento(''); setFiltroMembro('');
+    setFiltroOrigem(''); setFiltroDataInicio(''); setFiltroDataFim('');
+  };
 
   const membrosNomes = useMemo(() => {
-    return [...new Set(todasDoacoes.map(d => d.usuarioNome).filter(Boolean))].sort();
+    return [...new Set(todasDoacoes.map(d => d.usuarioNome).filter(n => n && n !== '–'))].sort();
   }, [todasDoacoes]);
 
   // ── Stats gerais ──
-  const totalGeral      = todasDoacoes.reduce((s, d) => s + (d.quantidade || 0), 0);
-  const totalEquipes    = ranking.length;
-  const totalUsuarios   = usuarios.length;
-  const totalMetas      = metas.length;
+  const totalGeral    = todasDoacoes.reduce((s, d) => s + (d.quantidade || 0), 0);
+  const totalEquipes  = ranking.length;
+  const totalUsuarios = usuarios.length;
+  const totalMetas    = metas.length;
+  const liderTotal    = ranking[0]?.total || 1;
 
   // ── Contagem geral por alimento ──
   const contagemGeral = useMemo(() => {
     const map = new Map();
     alimentosLista.forEach(a => map.set(a, 0));
-    todasDoacoes.forEach(d => { if (map.has(d.alimento)) map.set(d.alimento, map.get(d.alimento) + (d.quantidade || 0)); });
-    return Array.from(map.entries()).map(([nome, total]) => ({ nome, total })).filter(i => i.total > 0).sort((a, b) => b.total - a.total);
+    todasDoacoes.forEach(d => {
+      if (map.has(d.alimento)) map.set(d.alimento, map.get(d.alimento) + (d.quantidade || 0));
+    });
+    return Array.from(map.entries())
+      .map(([nome, total]) => ({ nome, total }))
+      .filter(i => i.total > 0)
+      .sort((a, b) => b.total - a.total);
   }, [todasDoacoes]);
 
   // ============================================================
@@ -516,21 +593,19 @@ const AdminPainel = () => {
   );
 
   const navItems = [
-    { id: 'visaogeral',  label: 'Visão Geral', icon: <IconDashboard /> },
-    { id: 'doacoes',     label: 'Doações',      icon: <IconBox /> },
-    { id: 'metas',       label: 'Metas',        icon: <IconTarget /> },
-    { id: 'ranking',     label: 'Ranking',      icon: <IconTrophy /> },
-    { id: 'usuarios',    label: 'Usuários',     icon: <IconUsers /> },
+    { id: 'visaogeral', label: 'Visão Geral', icon: <IconDashboard /> },
+    { id: 'doacoes',    label: 'Doações',      icon: <IconBox /> },
+    { id: 'metas',      label: 'Metas',        icon: <IconTarget /> },
+    { id: 'ranking',    label: 'Ranking',      icon: <IconTrophy /> },
+    { id: 'usuarios',   label: 'Usuários',     icon: <IconUsers /> },
   ];
 
   const summaryCards = [
-    { label: 'Total arrecadado',  value: `${totalGeral} kg`, accent: T.green,    bg: T.greenDim },
-    { label: 'Equipes ativas',    value: totalEquipes,        accent: T.sapphire, bg: T.sapphireDim },
-    { label: 'Usuários',          value: totalUsuarios,       accent: T.amber,    bg: T.amberDim },
-    { label: 'Metas cadastradas', value: totalMetas,          accent: T.teal,     bg: T.tealDim },
+    { label: 'Total arrecadado',  value: `${fmt(totalGeral)} kg`, accent: T.green,    bg: T.greenDim },
+    { label: 'Equipes ativas',    value: totalEquipes,             accent: T.sapphire, bg: T.sapphireDim },
+    { label: 'Usuários',          value: totalUsuarios,            accent: T.amber,    bg: T.amberDim },
+    { label: 'Metas cadastradas', value: totalMetas,               accent: T.teal,     bg: T.tealDim },
   ];
-
-  const liderTotal = ranking[0]?.total || 1;
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: T.bg, fontFamily: T.fontBody, color: T.textPrimary }}>
@@ -693,7 +768,6 @@ const AdminPainel = () => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
 
-              {/* Total por alimento */}
               <Card title="Total por alimento (geral)" className="ap-card">
                 {contagemGeral.length === 0
                   ? <EmptyState text="Nenhuma doação registrada." />
@@ -703,7 +777,7 @@ const AdminPainel = () => {
                         <div key={item.nome} style={{ marginBottom: 18 }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 7, fontSize: 13 }}>
                             <span style={{ color: T.textPrimary, fontWeight: 500 }}>{item.nome}</span>
-                            <span style={{ color: T.green, fontWeight: 600 }}>{item.total} kg</span>
+                            <span style={{ color: T.green, fontWeight: 600 }}>{fmt(item.total)} kg</span>
                           </div>
                           <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 6, height: 7, overflow: 'hidden' }}>
                             <div className="ap-bar-fill" style={{ width: `${(item.total / maxVal) * 100}%`, background: `linear-gradient(90deg, ${T.green}, ${T.teal})`, height: '100%', borderRadius: 6 }} />
@@ -714,7 +788,6 @@ const AdminPainel = () => {
                 }
               </Card>
 
-              {/* Top equipes */}
               <Card title="Top equipes" className="ap-card">
                 {ranking.slice(0, 5).map((eq, idx) => {
                   const medals = ['🥇', '🥈', '🥉'];
@@ -726,7 +799,7 @@ const AdminPainel = () => {
                           <span>{medals[idx] || `${idx + 1}º`}</span>
                           <span style={{ color: idx === 0 ? T.amber : T.textPrimary, fontWeight: idx === 0 ? 600 : 400 }}>{eq.nome}</span>
                         </span>
-                        <span style={{ color: idx === 0 ? T.amber : T.textSecond, fontWeight: 600 }}>{eq.total} kg</span>
+                        <span style={{ color: idx === 0 ? T.amber : T.textSecond, fontWeight: 600 }}>{fmt(eq.total)} kg</span>
                       </div>
                       <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 4, height: 4, overflow: 'hidden' }}>
                         <div style={{ width: `${pct}%`, background: idx === 0 ? T.amber : T.sapphire, height: '100%', borderRadius: 4, opacity: 0.8 }} />
@@ -735,30 +808,39 @@ const AdminPainel = () => {
                   );
                 })}
               </Card>
-
             </div>
 
-            {/* Últimas doações */}
             <Card title="Últimas 10 doações" className="ap-card">
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
                     <tr>
-                      {['Equipe', 'Alimento', 'Quantidade (kg)', 'Doador', 'Data'].map(h => (
+                      {['Equipe', 'Alimento', 'Quantidade (kg)', 'Doador', 'Origem', 'Data'].map(h => (
                         <th key={h} style={thStyle}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {[...todasDoacoes]
-                      .sort((a, b) => new Date(b.dataRegistro) - new Date(a.dataRegistro))
+                      // ✅ CORREÇÃO: usa parseData para ordenar corretamente
+                      .sort((a, b) => parseData(b.dataRegistro) - parseData(a.dataRegistro))
                       .slice(0, 10)
                       .map(doc => (
                         <tr key={doc.id} className="ap-table-row">
                           <td style={td}><span style={{ background: T.amberDim, color: T.amber, padding: '2px 8px', borderRadius: 10, fontSize: 11, fontWeight: 600 }}>{doc.equipe}</span></td>
                           <td style={td}>{doc.alimento}</td>
-                          <td style={td}><strong style={{ color: T.green }}>{doc.quantidade} kg</strong></td>
+                          <td style={td}><strong style={{ color: T.green }}>{fmt(doc.quantidade)} kg</strong></td>
                           <td style={td}>{doc.usuarioNome || '–'}</td>
+                          <td style={td}>
+                            <span style={{
+                              fontSize: 10, fontWeight: 600, padding: '3px 8px', borderRadius: 20,
+                              background: doc.origem === 'camera' ? T.sapphireDim : T.greenDim,
+                              color: doc.origem === 'camera' ? T.sapphire : T.green,
+                              border: `1px solid ${doc.origem === 'camera' ? T.sapphire : T.green}33`,
+                            }}>
+                              {doc.origem === 'camera' ? 'Câmera' : 'App'}
+                            </span>
+                          </td>
                           <td style={{ ...td, color: T.textMuted }}>{doc.dataRegistro}</td>
                         </tr>
                       ))}
@@ -774,7 +856,7 @@ const AdminPainel = () => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
             <Card title="Filtros" className="ap-card">
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 14, alignItems: 'end' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 14, alignItems: 'end' }}>
                 <div>
                   <label style={labelStyle}>Equipe</label>
                   <div className="ap-select-wrap">
@@ -803,6 +885,16 @@ const AdminPainel = () => {
                   </div>
                 </div>
                 <div>
+                  <label style={labelStyle}>Origem</label>
+                  <div className="ap-select-wrap">
+                    <select className="ap-filter-input" value={filtroOrigem} onChange={e => setFiltroOrigem(e.target.value)} style={{ backgroundColor: '#192118' }}>
+                      <option value="">Todas</option>
+                      <option value="app">App</option>
+                      <option value="camera">Câmera</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
                   <label style={labelStyle}>Data início</label>
                   <input type="date" className="ap-filter-input" value={filtroDataInicio} onChange={e => setFiltroDataInicio(e.target.value)} style={{ backgroundColor: '#192118' }} />
                 </div>
@@ -814,16 +906,17 @@ const AdminPainel = () => {
               {filtrosAtivos && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
                   <span style={{ fontSize: 11, color: T.textMuted }}>Filtros ativos:</span>
-                  {filtroEquipe   && <span className="ap-filter-chip" onClick={() => setFiltroEquipe('')}>{filtroEquipe} ×</span>}
-                  {filtroAlimento && <span className="ap-filter-chip" onClick={() => setFiltroAlimento('')}>{filtroAlimento} ×</span>}
-                  {filtroMembro   && <span className="ap-filter-chip" onClick={() => setFiltroMembro('')}>{filtroMembro} ×</span>}
+                  {filtroEquipe     && <span className="ap-filter-chip" onClick={() => setFiltroEquipe('')}>{filtroEquipe} ×</span>}
+                  {filtroAlimento   && <span className="ap-filter-chip" onClick={() => setFiltroAlimento('')}>{filtroAlimento} ×</span>}
+                  {filtroMembro     && <span className="ap-filter-chip" onClick={() => setFiltroMembro('')}>{filtroMembro} ×</span>}
+                  {filtroOrigem     && <span className="ap-filter-chip" onClick={() => setFiltroOrigem('')}>{filtroOrigem === 'camera' ? 'Câmera' : 'App'} ×</span>}
                   {filtroDataInicio && <span className="ap-filter-chip" onClick={() => setFiltroDataInicio('')}>De: {filtroDataInicio} ×</span>}
                   {filtroDataFim    && <span className="ap-filter-chip" onClick={() => setFiltroDataFim('')}>Até: {filtroDataFim} ×</span>}
                   <button onClick={limparFiltros} style={{ marginLeft: 'auto', background: 'transparent', border: `1px solid ${T.rose}44`, color: T.rose, borderRadius: 8, padding: '4px 12px', fontSize: 11, cursor: 'pointer', fontFamily: T.fontBody }}>
                     Limpar tudo
                   </button>
                   <span style={{ fontSize: 11, color: T.textMuted }}>
-                    {doacoesFiltradas.length} registro(s) · {doacoesFiltradas.reduce((s,d)=>s+(d.quantidade||0),0)} kg
+                    {doacoesFiltradas.length} registro(s) · {fmt(doacoesFiltradas.reduce((s,d) => s + (d.quantidade||0), 0))} kg
                   </span>
                 </div>
               )}
@@ -836,17 +929,28 @@ const AdminPainel = () => {
                   <div style={{ overflowX: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                       <thead>
-                        <tr>{['Equipe', 'Alimento', 'Quantidade (kg)', 'Doador', 'Data'].map(h => <th key={h} style={thStyle}>{h}</th>)}</tr>
+                        <tr>{['Equipe', 'Alimento', 'Quantidade (kg)', 'Doador', 'Origem', 'Data'].map(h => <th key={h} style={thStyle}>{h}</th>)}</tr>
                       </thead>
                       <tbody>
                         {[...doacoesFiltradas]
-                          .sort((a, b) => new Date(b.dataRegistro) - new Date(a.dataRegistro))
+                          // ✅ CORREÇÃO: usa parseData para ordenar corretamente
+                          .sort((a, b) => parseData(b.dataRegistro) - parseData(a.dataRegistro))
                           .map(doc => (
                             <tr key={doc.id} className="ap-table-row">
                               <td style={td}><span style={{ background: T.amberDim, color: T.amber, padding: '2px 8px', borderRadius: 10, fontSize: 11, fontWeight: 600 }}>{doc.equipe}</span></td>
                               <td style={td}>{doc.alimento}</td>
-                              <td style={td}><strong style={{ color: T.green }}>{doc.quantidade} kg</strong></td>
+                              <td style={td}><strong style={{ color: T.green }}>{fmt(doc.quantidade)} kg</strong></td>
                               <td style={td}>{doc.usuarioNome || '–'}</td>
+                              <td style={td}>
+                                <span style={{
+                                  fontSize: 10, fontWeight: 600, padding: '3px 8px', borderRadius: 20,
+                                  background: doc.origem === 'camera' ? T.sapphireDim : T.greenDim,
+                                  color: doc.origem === 'camera' ? T.sapphire : T.green,
+                                  border: `1px solid ${doc.origem === 'camera' ? T.sapphire : T.green}33`,
+                                }}>
+                                  {doc.origem === 'camera' ? 'Câmera' : 'App'}
+                                </span>
+                              </td>
                               <td style={{ ...td, color: T.textMuted }}>{doc.dataRegistro}</td>
                             </tr>
                           ))}
@@ -886,14 +990,14 @@ const AdminPainel = () => {
                             <tr key={meta.id} className="ap-table-row">
                               <td style={td}><span style={{ background: T.amberDim, color: T.amber, padding: '2px 8px', borderRadius: 10, fontSize: 11, fontWeight: 600 }}>{meta.equipe}</span></td>
                               <td style={td}><strong style={{ color: T.textPrimary }}>{meta.alimento}</strong></td>
-                              <td style={td}>{meta.quantidadeKg}</td>
-                              <td style={td}>{equipeTotal}</td>
+                              <td style={td}>{fmt(meta.quantidadeKg)}</td>
+                              <td style={td}>{fmt(equipeTotal)}</td>
                               <td style={td}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                                   <div style={{ flex: 1, background: 'rgba(255,255,255,0.06)', borderRadius: 4, height: 6, overflow: 'hidden', minWidth: 80 }}>
                                     <div style={{ width: `${Math.min(pct, 100)}%`, background: barColor, height: '100%', borderRadius: 4 }} />
                                   </div>
-                                  <span style={{ fontSize: 12, color: barColor, fontWeight: 700, flexShrink: 0 }}>{pct.toFixed(0)}%</span>
+                                  <span style={{ fontSize: 12, color: barColor, fontWeight: 700, flexShrink: 0 }}>{fmt(pct)}%</span>
                                 </div>
                               </td>
                               <td style={td}>
@@ -929,28 +1033,25 @@ const AdminPainel = () => {
                   <div style={{ overflowX: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                       <thead>
-                        <tr>{['Pos.', 'Equipe', 'Total (kg)', 'Participação', 'vs. Média'].map(h => <th key={h} style={thStyle}>{h}</th>)}</tr>
+                        <tr>{['Pos.', 'Equipe', 'Total (kg)', 'vs. Média'].map(h => <th key={h} style={thStyle}>{h}</th>)}</tr>
                       </thead>
                       <tbody>
                         {ranking.map((eq, idx) => {
                           const medals = ['🥇', '🥈', '🥉'];
-                          const pct = totalGeral > 0 ? ((eq.total / totalGeral) * 100).toFixed(1) : 0;
-                          const mediaGeral = ranking.length > 0 ? Math.round(totalGeral / ranking.length) : 0;
+                          const mediaGeral = ranking.length > 0
+                            ? ranking.reduce((s, r) => s + r.total, 0) / ranking.length
+                            : 0;
                           const diff = eq.total - mediaGeral;
                           return (
                             <tr key={eq.nome} className="ap-table-row">
                               <td style={td}><span style={{ fontFamily: T.fontDisplay, fontSize: 17, color: idx < 3 ? T.amber : T.textSecond }}>{medals[idx] || `${idx + 1}º`}</span></td>
                               <td style={td}><strong style={{ color: T.textPrimary }}>{eq.nome}</strong></td>
-                              <td style={td}><strong style={{ color: T.green }}>{eq.total} kg</strong></td>
+                              <td style={td}><strong style={{ color: T.green }}>{fmt(eq.total)} kg</strong></td>
                               <td style={td}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                  <div style={{ flex: 1, background: 'rgba(255,255,255,0.06)', borderRadius: 4, height: 6, overflow: 'hidden', minWidth: 80 }}>
-                                    <div style={{ width: `${pct}%`, background: `linear-gradient(90deg, ${T.green}, ${T.teal})`, height: '100%', borderRadius: 4 }} />
-                                  </div>
-                                  <span style={{ fontSize: 12, color: T.textSecond, flexShrink: 0 }}>{pct}%</span>
-                                </div>
+                                <span style={{ fontSize: 12, color: diff >= 0 ? T.green : T.rose, fontWeight: 600 }}>
+                                  {diff >= 0 ? '+' : ''}{fmt(diff)} kg
+                                </span>
                               </td>
-                              <td style={td}><span style={{ fontSize: 12, color: diff >= 0 ? T.green : T.rose, fontWeight: 600 }}>{diff >= 0 ? '+' : ''}{diff} kg</span></td>
                             </tr>
                           );
                         })}
@@ -979,7 +1080,7 @@ const AdminPainel = () => {
                         <tr>{['#', 'Nome', 'Email', 'Equipe', 'Cargo', 'Ações'].map(h => <th key={h} style={thStyle}>{h}</th>)}</tr>
                       </thead>
                       <tbody>
-                        {usuarios.map((u, idx) => {
+                        {usuarios.map((u) => {
                           const cargo = (u.cargo || u.role || 'aluno').toLowerCase();
                           const isAdmin = isCargoAdmin(cargo);
                           return (
